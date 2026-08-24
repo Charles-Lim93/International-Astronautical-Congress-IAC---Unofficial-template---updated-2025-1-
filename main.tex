@@ -624,40 +624,44 @@ STM32F7은 엔코더, 조향장치 및 저수준 구동계 데이터를 수집�
 \label{fig:filter_reinitialization}
 \end{figure*}
 
-레이저 거리측정값을 기준으로 한 위치추정 결과와 수동으로 계측한 방향각 결과를 Table~\ref{tab:hardware_results}에 정리하였다. MD 및 AD 주행시험에서 추정 위치는 실측값과 전반적으로 일치하였으며, 제로턴 및 주행 후 방향각 시험에서도 추정값이 기준값을 추종하였다.
+레이저 거리측정값을 기준으로 한 위치추정 결과와 수동으로 계측한 방향각 결과를 각각 Table~\ref{tab:position_results}과 Table~\ref{tab:heading_results}에 정리하였다. MD 및 AD 주행시험에서 추정 위치는 실측값과 전반적으로 일치하였으며, 제로턴 및 주행 후 방향각 시험에서도 추정값이 기준값을 추종하였다.
 
-\begin{table*}[t]
+\begin{table}[t]
 \centering
-\caption{실물 로버의 위치 및 방향각 추정 결과. 위치의 단위는 m, 방향각의 단위는 deg이다.}
-\label{tab:hardware_results}
-\begin{minipage}[t]{0.57\textwidth}
-\centering
-\textbf{(a) 위치추정 결과}\par\smallskip
-\begin{tabular}{lrrrr}
+\caption{Position estimation results from the indoor rover experiments. All values are in metres.}
+\label{tab:position_results}
+\scriptsize
+\setlength{\tabcolsep}{2.6pt}
+\renewcommand{\arraystretch}{1.10}
+\begin{tabularx}{\columnwidth}{l*{4}{>{\centering\arraybackslash}X}}
 \toprule
-\textbf{Case} & \boldmath{$x_{\mathrm{true}}$} & \boldmath{$y_{\mathrm{true}}$} & \boldmath{$x_{\mathrm{est}}$} & \boldmath{$y_{\mathrm{est}}$} \\
+\textbf{Case} & \shortstack{\textbf{Measured}\\\boldmath{$x$}} & \shortstack{\textbf{Measured}\\\boldmath{$y$}} & \shortstack{\textbf{Estimated}\\\boldmath{$x$}} & \shortstack{\textbf{Estimated}\\\boldmath{$y$}} \\
 \midrule
 MD\#1 & 12.92 &  0.10 & 13.02 &  0.10 \\
 MD\#2 &  3.09 & -0.86 &  3.04 & -0.83 \\
 MD\#3 &  5.07 &  0.50 &  5.43 &  0.53 \\
 AD\#1 &  3.05 & -1.16 &  3.30 & -1.28 \\
 \bottomrule
-\end{tabular}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.40\textwidth}
+\end{tabularx}
+\end{table}
+
+\begin{table}[t]
 \centering
-\textbf{(b) 방향각 추정 결과}\par\smallskip
-\begin{tabular}{lrrl}
+\caption{Heading estimation results from the indoor rover experiments. Heading values are in degrees.}
+\label{tab:heading_results}
+\scriptsize
+\setlength{\tabcolsep}{3.2pt}
+\renewcommand{\arraystretch}{1.10}
+\begin{tabularx}{\columnwidth}{lcc>{\centering\arraybackslash}X}
 \toprule
-\textbf{Case} & \textbf{True} & \textbf{Estimated} & \textbf{Maneuver} \\
+\textbf{Case} & \shortstack{\textbf{True}\\\textbf{heading}} & \shortstack{\textbf{Estimated}\\\textbf{heading}} & \textbf{Maneuver} \\
 \midrule
 Atti \#1 &  25.00 &  25.57 & Zero-turn \\
 Atti \#2 &  35.00 &  35.00 & Zero-turn \\
 Atti \#3 &  -2.00 &  -1.80 & After move \\
 \bottomrule
-\end{tabular}
-\end{minipage}
-\end{table*}
+\end{tabularx}
+\end{table}
 
 \section{결론}
 본 절은 시뮬레이션 및 하드웨어 시험의 최종 정량결과가 확정된 이후 작성한다.
