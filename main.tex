@@ -132,7 +132,14 @@ Proposed system & Non-visual fallback mode & FSS, IMU, wheel encoders & Heading-
 
 \subsection{전체 항법 아키텍처}
 
-제안 천문항법 시스템의 하드웨어 구성은 Fig.~\ref{fig:hw_architecture}과 같으며, 세부적인 다중센서 항법 소프트웨어 처리 흐름은 Fig.~\ref{fig:navigation_sw_flow}에 나타내었다. 탑재 IMU의 차체좌표계 각속도와 비력을 입력으로 하는 표준 스트랩다운 INS 기계화는 자세, 속도 및 위치를 고속으로 추측항법한다. 두 개의 보조 채널은 절대정보와 고유수용성 정보를 제공한다. 정밀시계 및 탑재 천체력 조회와 결합된 FSS는 측정 태양 시선벡터와 예측방향을 비교하여 절대 방위각 관측값을 생성한다. 휠 인코더는 4륜 독립조향 기구학 모델을 통해 차체좌표계 속도와 요각속도 관측값을 생성한다. ESKF는 공칭 INS 상태의 선형화 오차를 추적하고 보조측정값으로 장기 드리프트를 보정한다. 이후 추정된 오차를 공칭상태에 주입하고 오차상태를 0으로 초기화한다. 이와 함께 휠 속도 및 필터 추종상태를 감시하는 이상상태 감지·복구 채널을 두어, 구덩이 통과나 휠–지면 충격으로 측정값이 정상범위를 벗어나면 해당 측정 업데이트를 차단하고 공분산과 필터 내부상태의 재초기화를 수행한다.
+제안 천문항법 시스템의 센서 융합 개요는 Fig.~\ref{fig:navigation_overview}에 나타내었다. 하드웨어 구성은 Fig.~\ref{fig:hw_architecture}과 같으며, 세부적인 다중센서 항법 소프트웨어 처리 흐름은 Fig.~\ref{fig:navigation_sw_flow}에 나타내었다. 탑재 IMU의 차체좌표계 각속도와 비력을 입력으로 하는 표준 스트랩다운 INS 기계화는 자세, 속도 및 위치를 고속으로 추측항법한다. 두 개의 보조 채널은 절대정보와 고유수용성 정보를 제공한다. 정밀시계 및 탑재 천체력 조회와 결합된 FSS는 측정 태양 시선벡터와 예측방향을 비교하여 절대 방위각 관측값을 생성한다. 휠 인코더는 4륜 독립조향 기구학 모델을 통해 차체좌표계 속도와 요각속도 관측값을 생성한다. ESKF는 공칭 INS 상태의 선형화 오차를 추적하고 보조측정값으로 장기 드리프트를 보정한다. 이후 추정된 오차를 공칭상태에 주입하고 오차상태를 0으로 초기화한다. 이와 함께 휠 속도 및 필터 추종상태를 감시하는 이상상태 감지·복구 채널을 두어, 구덩이 통과나 휠–지면 충격으로 측정값이 정상범위를 벗어나면 해당 측정 업데이트를 차단하고 공분산과 필터 내부상태의 재초기화를 수행한다.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.96\textwidth]{pics/overview.png}
+\caption{FSS, IMU 및 휠 오도메트리를 결합한 ESKF 기반 항법 시스템 개요.}
+\label{fig:navigation_overview}
+\end{figure*}
 
 \begin{figure*}[t]
 \centering
@@ -596,7 +603,7 @@ FSS 시뮬레이션에서는 로버의 위치와 시각에 따른 기준 태양�
 
 \end{itemize}
 
-INS-only 결과는 관성항법의 기본적인 오차 누적특성을 나타낸다. 휠 오도메트리를 추가한 결과를 통해 속도 및 단거리 위치추정 개선효과를 평가하며, FSS를 추가한 결과를 통해 방위각 드리프트 제한효과를 분석한다. Fig.~\ref{fig:simulation_navigation_results}은 기준 궤적과 INS 결과의 위치 및 자세 추종성능을 비교한다.
+INS-only 결과는 관성항법의 기본적인 오차 누적특성을 나타낸다. 휠 오도메트리를 추가한 결과를 통해 속도 및 단거리 위치추정 개선효과를 평가하며, FSS를 추가한 결과를 통해 방위각 드리프트 제한효과를 분석한다. Fig.~\ref{fig:simulation_navigation_results}은 기준 궤적과 INS 결과의 위치, 자세 및 속도 추종성능을 비교한다.
 
 \begin{figure*}[t]
 \centering
@@ -610,7 +617,13 @@ INS-only 결과는 관성항법의 기본적인 오차 누적특성을 나타낸
   \includegraphics[width=\linewidth]{pics/atti.png}
   \caption{Attitude components}
 \end{subfigure}
-\caption{시뮬레이션 기준값과 INS 항법해의 위치 및 자세 추종결과.}
+\par\medskip
+\begin{subfigure}[t]{0.92\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{pics/vel.png}
+  \caption{Velocity components}
+\end{subfigure}
+\caption{시뮬레이션 기준값과 INS 항법해의 위치, 자세 및 속도 추종결과.}
 \label{fig:simulation_navigation_results}
 \end{figure*}
 
