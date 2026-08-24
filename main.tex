@@ -136,11 +136,7 @@ Proposed system & Non-visual fallback mode & FSS, IMU, wheel encoders & Heading-
 
 \begin{figure*}[t]
 \centering
-% 아래 상자를 실제 그림으로 교체:
-% \includegraphics[width=0.93\textwidth]{pics/navigation_architecture.pdf}
-\imageplaceholder[5.0cm]{Fig.~\ref{fig:architecture}: 항법 아키텍처 그림 삽입 위치\\[1mm]
-이상상태 감지·측정 배제·필터 재초기화 경로 포함\\[2mm]
-권장 파일명: \texttt{pics/navigation\_architecture.pdf}}
+\includegraphics[width=0.96\textwidth]{pics/hw_architecture.png}
 \caption{제안하는 INS/FSS/4륜 오도메트리 기반 ESKF 항법 아키텍처와 이상상태 복구 경로.}
 \label{fig:architecture}
 \end{figure*}
@@ -320,7 +316,14 @@ $\bar{\mathbf{S}}_{MS}^i(t)$를 탑재시간에서 천체력으로 계산한 MCI
 \hat{\mathbf{S}}^b(t)=C_\ell^b(\hat q)\mathbf{S}^{\ell}(t),\qquad \hat{\mathbf{S}}^{ss}(t)=C_b^{ss}\hat{\mathbf{S}}^b(t)
 \end{equation}
 
-식~\eqref{eq:7}과 식~\eqref{eq:8}은 원시 시선벡터와 EASI 방위각 관측에서 공통으로 사용하는 예측 체인을 구성한다.
+식~\eqref{eq:7}과 식~\eqref{eq:8}은 원시 시선벡터와 EASI 방위각 관측에서 공통으로 사용하는 예측 체인을 구성한다. Fig.~\ref{fig:ephemeris_variation}은 월내 시각, 일내 시각 및 로버 방위각 변화에 따른 기준 태양벡터의 변화를 나타낸다.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{pics/ephemeris.png}
+\caption{월내 시각, 일내 시각 및 로버의 360$^\circ$ 방위각 변화에 따른 기준 태양벡터의 변화. 색상은 1월부터 12월까지의 월별 궤적을 나타낸다.}
+\label{fig:ephemeris_variation}
+\end{figure*}
 
 \subsection{원시 시선벡터 측정}
 
@@ -352,7 +355,7 @@ ESKF의 두 번째 보조 채널은 로버 구동 및 조향 인코더에서 얻
 
 \subsection{4륜 독립조향 기구학}
 
-그림 4와 같이 플랫폼은 휠베이스 $L$(전륜-후륜 거리)과 윤거 $2d$(좌측-우측 거리)를 갖는 차체의 네 모서리에 각각 독립적으로 조향할 수 있는 휠을 배치한다. 각 휠의 조향각 $\delta_i$($i \in \{LF, RF, LB, RB\}$)은 독립적으로 명령된다. 기하학적 중심에서 측정한 순간 회전반경 $R$에 대해 Ackermann 조건을 만족하는 후륜축 조향각은 다음과 같다.
+Fig.~\ref{fig:odometry_geometry}와 같이 플랫폼은 휠베이스 $L$(전륜-후륜 거리)과 윤거 $2d$(좌측-우측 거리)를 갖는 차체의 네 모서리에 각각 독립적으로 조향할 수 있는 휠을 배치한다. 각 휠의 조향각 $\delta_i$($i \in \{LF, RF, LB, RB\}$)은 독립적으로 명령된다. 기하학적 중심에서 측정한 순간 회전반경 $R$에 대해 Ackermann 조건을 만족하는 후륜축 조향각은 다음과 같다.
 
 \begin{equation}
 \tag{11}\label{eq:11}
@@ -366,7 +369,12 @@ ESKF의 두 번째 보조 채널은 로버 구동 및 조향 인코더에서 얻
 \delta_{\mathrm{rover}} \;=\; \tfrac{1}{2}\bigl(\delta_{LB} + \delta_{RB}\bigr).
 \end{equation}
 
-\placeholderfigure{자전거 모델과 4륜 독립조향 Ackermann 모델 비교.}{4륜 조향 기구학 그림 삽입 예정}
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.92\textwidth]{pics/odometry.png}
+\caption{순간회전중심(ICR)을 기준으로 한 4륜 독립조향 Ackermann 기구학과 휠 조향각 정의.}
+\label{fig:odometry_geometry}
+\end{figure*}
 
 \subsection{속도 및 요각속도 관측}
 
@@ -581,7 +589,23 @@ FSS 시뮬레이션에서는 로버의 위치와 시각에 따른 기준 태양�
 
 \end{itemize}
 
-INS-only 결과는 관성항법의 기본적인 오차 누적특성을 나타낸다. 휠 오도메트리를 추가한 결과를 통해 속도 및 단거리 위치추정 개선효과를 평가하며, FSS를 추가한 결과를 통해 방위각 드리프트 제한효과를 분석한다.
+INS-only 결과는 관성항법의 기본적인 오차 누적특성을 나타낸다. 휠 오도메트리를 추가한 결과를 통해 속도 및 단거리 위치추정 개선효과를 평가하며, FSS를 추가한 결과를 통해 방위각 드리프트 제한효과를 분석한다. Fig.~\ref{fig:simulation_navigation_results}은 기준 궤적과 INS 결과의 위치 및 자세 추종성능을 비교한다.
+
+\begin{figure*}[t]
+\centering
+\begin{subfigure}[t]{0.49\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{pics/position.png}
+  \caption{Position components}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{0.49\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{pics/atti.png}
+  \caption{Attitude components}
+\end{subfigure}
+\caption{시뮬레이션 기준값과 INS 항법해의 위치 및 자세 추종결과.}
+\label{fig:simulation_navigation_results}
+\end{figure*}
 
 \section{하드웨어 시험}
 
@@ -616,10 +640,7 @@ STM32F7은 엔코더, 조향장치 및 저수준 구동계 데이터를 수집�
 
 \begin{figure*}[t]
 \centering
-% 아래 상자를 실제 결과 그래프로 교체:
-% \includegraphics[width=0.88\textwidth]{pics/filter_reinitialization.pdf}
-\imageplaceholder[4.2cm]{구덩이·외란 감지 및 필터 재초기화 결과 그래프 삽입 위치\\[2mm]
-권장 파일명: \texttt{pics/filter\_reinitialization.pdf}}
+\includegraphics[width=0.96\textwidth]{pics/filter_reinit.png}
 \caption{구덩이 및 휠–지면 외란에 의해 속도 추정값이 정상범위를 벗어난 구간의 감지와 필터 재초기화 결과. 확대 패널은 복구절차 전후의 속도 추정 변화를 나타낸다.}
 \label{fig:filter_reinitialization}
 \end{figure*}
