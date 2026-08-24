@@ -26,6 +26,13 @@ Feel free to use or modify this template, but please consider it to be
 distributed under the BSD 2-clause license. In other words, don't remove
 the attribution or this README.
 
+## Manuscript language versions
+
+- `main.tex`: Korean working manuscript (XeLaTeX)
+- `main_en.tex`: English manuscript (XeLaTeX)
+
+In Overleaf, select the desired file under **Menu > Main document**, then recompile.
+
 Authors: 
 1) John O. Woods, Ph.D. (original author)  
 West Virginia University Applied Space Exploration Laboratory  

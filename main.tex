@@ -10,15 +10,15 @@
   \setmainhangulfont{UnBatang}
   \setsanshangulfont{UnDotum}
 }
-\usepackage{amsmath,amssymb,bm}
+% IAC_style already loads unicode-math under XeLaTeX.
+% Avoid amssymb/bm and custom \skew redefinitions that conflict with it.
+\usepackage{amsmath}
 \usepackage{enumitem}
 \usepackage{subcaption}
 \usepackage{array}
 \usepackage{microtype}
 \graphicspath{{pics/}{pics/docx/}}
 
-\newcommand{\vect}[1]{\bm{#1}}
-\newcommand{\skew}[1]{[#1]_{\times}}
 \newcommand{\imageplaceholder}[2][3.1cm]{%
   \fbox{\parbox[c][#1][c]{0.92\linewidth}{\centering\footnotesize #2}}%
 }

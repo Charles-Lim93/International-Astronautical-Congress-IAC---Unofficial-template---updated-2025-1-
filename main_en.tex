@@ -1,0 +1,597 @@
+% !TeX program = xelatex
+\documentclass[]{IAC_style}
+
+% English manuscript. Compile with XeLaTeX.
+% IAC_style provides unicode-math and the TeX Gyre Termes math font.
+\usepackage{amsmath}
+\usepackage{enumitem}
+\usepackage{subcaption}
+\usepackage{array}
+\usepackage{microtype}
+\graphicspath{{pics/}{pics/docx/}}
+
+\newcommand{\imageplaceholder}[2][3.1cm]{%
+  \fbox{\parbox[c][#1][c]{0.92\linewidth}{\centering\footnotesize #2}}%
+}
+\newcommand{\placeholderfigure}[2]{%
+  \begin{figure}[t]
+  \centering
+  \imageplaceholder{#2}
+  \caption{#1}
+  \end{figure}
+}
+
+\begin{document}
+
+\IACpaperyear{2026}
+\IACpapernumber{IAC-26-C1.5.6.x108402}
+\IAClocation{TBD}
+\IACdate{TBD}
+\IACcopyrightA{}
+
+\title{Development and Verification of an Error-State Kalman Filter-Based Multisensor Navigation System for Lunar Rovers}
+
+% Author information from the accepted abstract (Paper ID 108402).
+\IACauthor{Chulsoo Lim}{1}{1}
+\IACauthor{Bang Hyochoong}{1}{0}
+\IACauthoraffiliation{Korea Advanced Institute of Science and Technology (KAIST), Republic of Korea}
+
+\abstract{This study proposes an error-state Kalman filter (ESKF)-based local navigation architecture that integrates a Fine Sun Sensor (FSS), an inertial navigation system (INS), and four-wheel independent-steering odometry to support lunar-surface operation when vision-based navigation is degraded or unavailable. The navigation state is propagated in a local Cartesian frame aligned with the initial direction of travel. Constant gravity and a locally planar surface are assumed for short-range, low-speed operation. The proposed algorithm is verified progressively using an Unreal Engine/AirSim simulation environment and hardware experiments with a full-scale rover.}
+
+\maketitle
+\thispagestyle{fancy}
+
+\section*{Nomenclature and Abbreviations}
+\begin{tabular}{@{}ll@{}}
+ESKF & Error-State Kalman Filter \\
+FSS & Fine Sun Sensor \\
+INS & Inertial Navigation System \\
+IMU & Inertial Measurement Unit \\
+VO & Visual Odometry \\
+\end{tabular}
+
+\section{Introduction}
+
+International and commercial interest in lunar exploration has intensified through programs such as Artemis and Commercial Lunar Payload Services. As a result, surface mobility has become a central topic in planetary robotics. Lunar rovers are being developed for cargo transport, scientific exploration, and in-situ resource utilization. Reliable positioning and precise navigation are essential if these systems are to operate autonomously with limited support from Earth.
+
+Unlike terrestrial autonomous vehicles, lunar rovers cannot use GNSS, high-accuracy terrestrial beacons, or a useful planetary magnetic field~\cite{ilyas2016integrated}. State estimation is therefore restricted to a small set of self-contained measurements, including inertial data, celestial observations, and wheel odometry. Their error characteristics must be modeled carefully and fused consistently.
+
+The INS is a core element of a lunar-rover navigation architecture because it provides high-bandwidth attitude, velocity, and position estimates without external infrastructure. When operated alone, however, the integration of bias and noise causes the navigation error to grow without bound. This effect is particularly significant for low-cost MEMS sensors. Periodic correction with at least one absolute, non-diverging measurement is therefore required~\cite{titterton2004strapdown,groves2013principles}.
+
+Previous Mars and lunar rovers have addressed this limitation using several aiding sensors. The Mars Exploration Rovers, Mars Science Laboratory, and Perseverance rely strongly on visual odometry (VO) and stereo terrain-relative navigation. The Chang'e/Yutu rovers combine inertial measurements with Sun observations and image-based methods. These missions demonstrate the maturity of vision-based navigation for planetary surface vehicles.
+
+\begin{table*}[t]
+\centering
+\caption{Representative navigation approaches used by planetary surface vehicles.}
+\label{tab:rover_navigation}
+\scriptsize
+\begin{tabularx}{\textwidth}{p{0.13\textwidth}p{0.14\textwidth}p{0.30\textwidth}X}
+\toprule
+\textbf{Mission} & \textbf{Operation} & \textbf{Main Navigation Sensors} & \textbf{Navigation Approach} \\
+\midrule
+Apollo LRV & Crew-driven & Directional gyro, wheel odometers, Sun-shadow device & Dead reckoning with solar heading check \\
+MER Spirit / Opportunity & Ground-commanded + AutoNav & Stereo cameras, IMU, wheel encoders & VO, terrain mapping, and slip compensation \\
+MSL Curiosity & Ground-commanded + AutoNav & Stereo cameras, IMU, wheel encoders & VO and terrain-hazard assessment \\
+Mars 2020 Perseverance & Enhanced AutoNav & Stereo cameras, IMU, wheel encoders & Continuous VO, mapping, and path planning \\
+Chang'e-4 / Yutu-2 & Ground-in-the-loop & Stereo cameras, IMU, wheel odometry & Stereo mapping and rover localization \\
+Chandrayaan-3 / Pragyan & Semi-autonomous & Stereo Navcams, mobility telemetry & Ground-based DEM and path planning \\
+SLIM / LEV-2 & Fully autonomous, short-range & Dual cameras, motion sensors & Autonomous mobility and imaging \\
+IM-2 / YAOKI* & Teleoperated & Camera, mobility telemetry & Imaging only; no surface traverse \\
+Rashid-1 / Rashid-2** & Ground-in-the-loop & Wide-field cameras, mobility sensors & Vision-assisted surface operation \\
+Proposed system & Non-visual fallback mode & FSS, IMU, wheel encoders & Heading-bounded local dead reckoning \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+The performance and availability of VO depend on scene texture and illumination. Low-texture regolith, long shadows at low solar elevation, high contrast, temporary camera degradation, and limited onboard computing resources can reduce feature-detection and matching reliability. A navigation aid independent of terrain imagery is therefore valuable as a complementary channel that improves system availability and fault tolerance.
+
+Sun-vector-based celestial navigation has been studied as such an aid. Comparing a measured solar line-of-sight vector with the direction predicted from an onboard ephemeris and clock provides bounded absolute heading and inclination information~\cite{ilyas2016integrated,rhee2007satellite}. A Sun sensor is mechanically simple, radiation tolerant, and largely independent of terrain conditions, making it suitable for long-duration lunar operation.
+
+The ESKF is a standard framework for fusing inertial, celestial, and odometric measurements~\cite{lefferts1982kalman,sola2017quaternion,sveinsson2012insgps,groves2013principles}. It tracks a small linearized error state around a nonlinearly propagated nominal state, handles the quaternion unit-norm constraint consistently, and estimates attitude errors and IMU biases in minimal coordinates. These properties are well suited to lunar navigation with intermittent absolute updates.
+
+This study implements and verifies a complete ESKF-based multisensor navigation system for lunar-rover operation. It evaluates whether FSS Sun-vector measurements can bound INS heading drift and whether wheel odometry can maintain short-range local-position continuity when VO is unavailable or unreliable, provided that the Sun remains within the sensor field of view. The architecture combines an INS, a CMOS-based FSS, and wheel odometry from a four-wheel independent-steering rover in one error-state filter under local-plane and constant-gravity assumptions.
+
+The main contributions are as follows.
+
+\begin{enumerate}[label=(\roman*)]
+\item A non-visual local-navigation architecture for a lunar rover that combines an INS, FSS, and four-wheel independent-steering odometry in a single ESKF. An ephemeris-based Sun vector bounds heading drift, while wheel odometry estimates short-range velocity and displacement. The Sun-vector transformations and measurement models are formulated consistently, and the rover kinematics support Ackermann steering, zero turns, and independent steering.
+
+\item Simulation and real-time implementation of the integrated navigation algorithm. The ESKF is evaluated in a lunar-surface environment based on Microsoft AirSim and Unreal Engine under nominal driving, turning, wheel-slip, and VO-outage conditions. The same algorithm is implemented on a dual-board NAVCOM composed of a Jetson Orin Nano and STM32F7 and checked through PILS and HILS.
+
+\item Experimental verification of the wheel--inertial subsystem using a full-scale four-wheel independent-steering rover and a helium-buoyancy gravity offloading system. Indoor experiments focus on the IMU, wheel encoders, rover kinematics, and real-time NAVCOM implementation because the solar illumination geometry required for an FSS update cannot be reproduced faithfully indoors.
+\end{enumerate}
+
+Section 2 presents the navigation architecture and reference frames. Section 3 describes the local-frame INS mechanization. Sections 4 and 5 develop the FSS and four-wheel odometry measurement models. Section 6 formulates the ESKF. Sections 7 and 8 present the simulation and hardware tests, followed by the conclusion.
+
+\section{Navigation Architecture and Reference Frames}
+
+\subsection{Overall Navigation Architecture}
+
+The sensor-fusion concept is shown in Fig.~\ref{fig:navigation_overview}, the hardware organization in Fig.~\ref{fig:hw_architecture}, and the detailed multisensor software flow in Fig.~\ref{fig:navigation_sw_flow}. A strapdown INS propagates attitude, velocity, and position at high rate using IMU angular-rate and specific-force measurements. The FSS, together with the onboard clock and ephemeris, generates an absolute heading observation by comparing measured and predicted Sun directions. The wheel encoders provide body-frame velocity and yaw-rate observations through the four-wheel kinematic model. The ESKF tracks the linearized errors of the nominal INS state and uses the aiding measurements to correct long-term drift. A monitoring and recovery channel rejects abnormal wheel measurements and reinitializes filter information when disturbances caused by pits or wheel--terrain impacts exceed the normal range.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.96\textwidth]{pics/overview.png}
+\caption{Overview of the ESKF-based navigation system integrating the FSS, IMU, and wheel odometry.}
+\label{fig:navigation_overview}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.98\textwidth]{pics/hw_architecture.png}
+\caption{Hardware architecture of the integrated navigation system.}
+\label{fig:hw_architecture}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.98\textwidth]{pics/navigation_sw_architecture.png}
+\caption{Multisensor navigation software processing flow.}
+\label{fig:navigation_sw_flow}
+\end{figure*}
+
+The INS runs at the 200-Hz IMU sampling rate. FSS updates are processed asynchronously whenever a valid Sun image is acquired, typically at several hertz. Wheel encoders are sampled at the motor-controller rate. Each asynchronous measurement invokes the corresponding ESKF update without changing the high-rate propagation loop.
+
+\subsection{Reference Frames and Notation}
+
+The following right-handed orthonormal frames are used.
+\begin{itemize}[leftmargin=*]
+\item \textbf{Body frame $b$:} rover-fixed frame with its origin at the IMU. The $x_b$-axis points forward, $y_b$ to the right, and $z_b$ downward.
+\item \textbf{Local navigation frame $\ell$:} local Cartesian frame fixed at the test starting point. The $x_\ell$-axis is aligned with the initial forward direction, $y_\ell$ points initially rightward, and $z_\ell$ points downward. Initially, $C_b^\ell(0)=I$.
+\item \textbf{Sun-sensor frame $ss$:} frame fixed to the FSS housing, with $x_{ss}$ along the optical axis. The fixed sensor-to-body mounting alignment is $C_{ss}^b$.
+\end{itemize}
+
+A rotation between frames is represented by a direction-cosine matrix $C_a^b$ or quaternion $q_a^b$. The matrix transforms a vector expressed in frame $a$ into frame $b$:
+\begin{equation*}
+v^b=C_a^b v^a.
+\end{equation*}
+Rover position and velocity in the local frame are
+\begin{equation*}
+p^\ell=\begin{bmatrix}x&y&z\end{bmatrix}^{\top},\qquad v^\ell=\begin{bmatrix}v_x&v_y&v_z\end{bmatrix}^{\top}.
+\end{equation*}
+The navigation state is relative to the starting point rather than global lunar latitude, longitude, and altitude. MCI and MCMF coordinates are used only to preprocess the reference Sun vector.
+
+\subsection{Sensor Configuration}
+
+Table~\ref{tab:sensors} summarizes the main sensor parameters. The IMU and motor encoders are integrated with the onboard navigation computer. The FSS is mounted on the upper deck with its optical axis aligned nominally with $+x_b$ to maximize sky visibility. Its mounting error is included in $C_{ss}^b$.
+
+\begin{table}[t]
+\centering
+\caption{Main sensor configuration of the test platform.}
+\label{tab:sensors}
+\scriptsize
+\begin{tabularx}{\columnwidth}{p{0.19\columnwidth}p{0.29\columnwidth}X}
+\toprule
+\textbf{Sensor} & \textbf{Parameter} & \textbf{Value} \\
+\midrule
+IMU & Sampling rate & 200 Hz \\
+ & Gyro bias & 10 deg/h class \\
+ & Accelerometer bias & 1 mg class \\
+FSS & Accuracy & 0.2 deg ($2\sigma$) \\
+ & Field of view & 176 deg \\
+ & Mass and power & 15 g, 100--174 mW \\
+Encoders & Drive/steering channels & Four each \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Local-Frame INS Mechanization}
+
+The strapdown INS integrates IMU angular rate and specific force to propagate rover attitude, velocity, and position in the local frame $\ell$~\cite{titterton2004strapdown,groves2013principles}. The experiments are limited to short-range, low-speed motion. The lunar surface over the test area is approximated as a local plane with constant gravity. Lunar rotation, surface curvature, position-dependent gravity, and transport rate are neglected. This approximation is justified when $L/R_M\ll1$ and the Coriolis acceleration $2\omega_Mv$ is much smaller than the IMU error level.
+
+\subsection{Constant-Gravity and Local-Plane Assumptions}
+
+Because $z_\ell$ points downward, the gravity vector is
+\begin{equation}
+\tag{1}\label{eq:1}
+g^\ell=\begin{bmatrix}0&0&g_0\end{bmatrix}^{\top}.
+\end{equation}
+Here, $g_0$ is the effective gravitational acceleration used in the test environment. The configured lunar value is used in software simulation, while terrestrial tests compensate gravity according to the actual IMU environment. The helium-buoyancy system changes the effective vertical wheel load but does not transform the terrestrial gravity field acting on the IMU into lunar gravity.
+
+\subsection{Attitude Kinematics}
+
+The body-to-local attitude is represented by the unit quaternion
+\begin{equation*}
+q_b^\ell=\begin{bmatrix}q_w&q_x&q_y&q_z\end{bmatrix}^{\top}.
+\end{equation*}
+The bias-corrected gyro rate is
+\begin{equation}
+\tag{2}\label{eq:2}
+\hat{\omega}_{\ell b}^b=\omega_m^b-b_g,
+\end{equation}
+where $\omega_m^b$ is the gyro measurement and $b_g$ is the estimated bias. With the local frame treated as inertially fixed during the test,
+\begin{equation}
+\tag{3}\label{eq:3}
+\dot q_b^\ell=\frac{1}{2}q_b^\ell\otimes\begin{bmatrix}0\\\hat{\omega}_{\ell b}^b\end{bmatrix}.
+\end{equation}
+The symbol $\otimes$ denotes Hamilton quaternion multiplication. The quaternion is normalized after numerical integration.
+
+\subsection{Velocity Update}
+
+The bias-corrected specific force is $\hat f^b=f_m^b-b_a$, where $f_m^b$ is the accelerometer measurement and $b_a$ is the estimated accelerometer bias. The velocity equation is
+\begin{equation}
+\tag{4}\label{eq:4}
+\dot v^\ell=C_b^\ell\left(f_m^b-b_a\right)+g^\ell.
+\end{equation}
+Coriolis and centrifugal acceleration, transport acceleration, and position-dependent gravity are omitted because they are small compared with bias and wheel-slip errors over the test range.
+
+\subsection{Position Update}
+
+The local Cartesian position satisfies
+\begin{equation}
+\tag{5}\label{eq:5}
+\dot p^\ell=v^\ell.
+\end{equation}
+Assuming constant acceleration over the IMU interval $\Delta t$,
+\begin{equation*}
+p_{k+1}^\ell=p_k^\ell+v_k^\ell\Delta t+\frac{1}{2}a_k^\ell\Delta t^2,
+\end{equation*}
+\begin{equation*}
+v_{k+1}^\ell=v_k^\ell+a_k^\ell\Delta t,
+\end{equation*}
+\begin{equation*}
+a_k^\ell=C_{b,k}^\ell(f_{m,k}^b-b_{a,k})+g^\ell.
+\end{equation*}
+This representation directly expresses forward, lateral, and vertical displacement in metres, matching the quantities measured in the experiments.
+
+\section{Fine-Sun-Sensor-Based Celestial Navigation}
+
+\subsection{Sensor Operating Principle}
+
+The FSS is a CMOS digital Sun sensor. Parallel sunlight passes through a precision aperture and forms an image on a photodiode array. The onboard algorithm converts the spot centroid from pixel coordinates into a three-dimensional unit Sun line-of-sight vector in the sensor frame~\cite{rhee2007satellite}. Representative specifications are 0.2-deg accuracy ($2\sigma$), a 176-deg field of view, a mass of approximately 15 g, power consumption of 100--174 mW, and radiation tolerance above 24 kRad.
+
+The FSS is particularly suitable as an INS aid because its measurement does not diverge with time and is largely insensitive to terrain texture, regolith disturbance, and low-elevation shadows. Its principal operational constraint is that the Sun must remain in the field of view.
+
+\placeholderfigure{FSS operating principle and example Sun image.}{FSS concept, sensor photograph, and Sun image to be inserted}
+
+\subsection{Ephemeris-Based Reference Sun Vector}
+
+Let $\bar{\mathbf{S}}_{MS}^i(t)$ be the Moon-centre-to-Sun unit vector in the MCI frame obtained from the onboard ephemeris. Because the INS state does not include global LLH position, a fixed landing-site MCMF-to-local transformation $C_m^\ell$ is used:
+\begin{equation}
+\tag{7}\label{eq:7}
+\mathbf{S}^{\ell}(t)=C_m^\ell C_i^m(t)\,\bar{\mathbf{S}}_{MS}^i(t).
+\end{equation}
+Here, $C_i^m(t)$ is the time-dependent MCI-to-MCMF rotation. Solar parallax due to short-range rover motion is negligible. The predicted vector in the sensor frame is
+\begin{equation}
+\tag{8}\label{eq:8}
+\hat{\mathbf{S}}^b(t)=C_\ell^b(\hat q)\mathbf{S}^{\ell}(t),\qquad \hat{\mathbf{S}}^{ss}(t)=C_b^{ss}\hat{\mathbf{S}}^b(t).
+\end{equation}
+Equations~\eqref{eq:7} and~\eqref{eq:8} define the prediction chain shared by the raw line-of-sight and EASI heading measurements. Figure~\ref{fig:ephemeris_variation} shows the reference-vector variation over month, time of day, and rover heading.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{pics/ephemeris.png}
+\caption{Reference Sun-vector variation with month, time of day, and a 360$^\circ$ change in rover heading. Colours indicate monthly trajectories from January to December.}
+\label{fig:ephemeris_variation}
+\end{figure*}
+
+\subsection{Raw Line-of-Sight Measurement}
+
+The FSS output can be processed directly as a measured unit Sun vector in the sensor frame, either as a three-component unit vector or as a two-component azimuth--elevation observation:
+\begin{equation}
+\tag{9}\label{eq:9}
+y_k^{\mathrm{LOS}}=h_{\mathrm{LOS}}(x_k;\widetilde{\mathcal X},t)+e_{ss,k}=\begin{bmatrix}\arctan(S_y^{ss}/S_x^{ss})\\[2pt]-\arcsin(S_z^{ss})\end{bmatrix}+e_{ss,k}.
+\end{equation}
+Equivalently, $y_k^{\mathrm{LOS}}=\mathbf{S}^{ss}(t)+e_{ss,k}$. The noise $e_{ss,k}$ is modeled as zero-mean Gaussian noise with covariance derived from the FSS angular-accuracy specification. The raw-vector form is useful when the sensor raw data and centroid statistics are available, but its Jacobian couples attitude, position, and lunar-rotation kinematics.
+
+\subsection{EASI Heading-Error Measurement}
+
+The primary measurement form follows the Ephemeris-Aided Sun Indicator (EASI) configuration~\cite{ilyas2016integrated}. The FSS output is reduced to an azimuth estimate in a horizontal, yaw-removed frame. Heading error is defined by the angular difference between the ephemeris-predicted and rover-measured solar azimuths:
+\begin{equation}
+\tag{10}\label{eq:10}
+\begin{aligned}
+y_k^\psi&=h_\psi(x_k;\widetilde{\mathcal X},t)+e_{\psi,k}\\
+&=\underbrace{\psi(\mathbf S^\ell(t))}_{\text{ephemeris azimuth}}-\underbrace{\psi(C_b^{\ell'}C_{ss}^b\mathbf S^{ss})}_{\text{yaw-removed FSS azimuth}}-\tilde\psi+e_{\psi,k}.
+\end{aligned}
+\end{equation}
+Here, $\psi(X)=\operatorname{atan2}(X_2,X_1)$ extracts horizontal azimuth, $C_b^{\ell'}$ is reconstructed from the current roll and pitch estimates with zero yaw, and $\tilde\psi$ is the nominal INS heading. The EASI measurement is scalar, remains separated from position, and yields a sparse, numerically stable heading-error observation. The implementation supports either Eq.~\eqref{eq:9} or Eq.~\eqref{eq:10} without changing the architecture.
+
+\section{Four-Wheel Independent-Steering Ackermann Odometry}
+
+The second aiding channel is wheel odometry from the drive and steering encoders. A conventional bicycle model becomes singular or inaccurate during zero turns and small-radius maneuvers. The odometry is therefore formulated directly from the four-wheel independent-steering geometry.
+
+\subsection{Four-Wheel Independent-Steering Kinematics}
+
+As shown in Fig.~\ref{fig:odometry_geometry}, the rover has wheelbase $L$, half-track $d$, and independently steered wheels at the four corners. For instantaneous turning radius $R$, the rear steering angles satisfying the Ackermann condition are
+\begin{equation}
+\tag{11}\label{eq:11}
+\delta_{LB}=-\arctan\!\left(\dfrac{L}{R-d}\right),\qquad \delta_{RB}=-\arctan\!\left(\dfrac{L}{R+d}\right).
+\end{equation}
+The front axle uses the corresponding equations with opposite sign. The effective rover steering angle is
+\begin{equation}
+\tag{12}\label{eq:12}
+\delta_{\mathrm{rover}}=\tfrac{1}{2}(\delta_{LB}+\delta_{RB}).
+\end{equation}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.92\textwidth]{pics/odometry.png}
+\caption{Four-wheel independent-steering Ackermann geometry and wheel-angle definitions about the instantaneous centre of rotation.}
+\label{fig:odometry_geometry}
+\end{figure*}
+
+\subsection{Velocity and Yaw-Rate Observations}
+
+The rear drive encoders provide the clearest rolling-contact estimates. With wheel radius $r_w$ and rear-wheel angular rates $n_{RL}$ and $n_{RR}$,
+\begin{equation}
+\tag{13}\label{eq:13}
+v_{RL}=r_wn_{RL},\qquad v_{RR}=r_wn_{RR}.
+\end{equation}
+The longitudinal speed, yaw rate, and instantaneous radius are
+\begin{equation}
+\tag{14}\label{eq:14}
+v_{\mathrm{avg}}=\tfrac{1}{2}(v_{RL}+v_{RR}),\quad \omega_{bz}=\dfrac{v_{RR}-v_{RL}}{2d},\quad R=\dfrac{v_{\mathrm{avg}}}{\omega_{bz}}.
+\end{equation}
+The odometry pseudo-measurement is
+\begin{equation}
+\tag{15}\label{eq:15}
+y_k^{\mathrm{od}}=\begin{bmatrix}v_{\mathrm{avg}}\\\omega_{bz}\end{bmatrix}+e_{\mathrm{od},k}.
+\end{equation}
+It is compared with the longitudinal projection of the nominal body-frame velocity and the gyro-derived body yaw rate. The covariance is increased with locally estimated slip, reducing the weight of odometry during high-slip starts.
+
+\subsection{Special Maneuvers: Zero Turn and Wheelbase Adjustment}
+
+During a zero turn, all wheels are tangent to a common rotation centre at the body centre. Longitudinal speed is zero while yaw rate is nonzero, so the bicycle-model radius becomes singular. The four-wheel model handles the condition directly with $v_{\mathrm{avg}}=0$ and $\omega_{bz}=(v_{RR}-v_{RL})/(2d)\neq0$. During wheelbase adjustment, temporarily nonparallel front and rear steering commands vary the effective kinematic wheelbase. Because the individual steering angles remain explicit, the observation in Eq.~\eqref{eq:15} remains defined throughout both maneuvers.
+
+\section{Error-State Kalman Filter Formulation}
+
+The ESKF is the fusion engine of the proposed system. The nominal state is propagated by nonlinear INS mechanization, while the filter estimates the small error between the nominal and true trajectories. Estimated errors from FSS and wheel-odometry updates are injected into the nominal state. A right-multiplicative attitude-error convention is used consistently~\cite{lefferts1982kalman,sola2017quaternion,sveinsson2012insgps}.
+
+\subsection{State Decomposition}
+
+The 16-dimensional nominal state consists of position, velocity, unit-quaternion attitude, accelerometer bias, and gyro bias:
+\begin{equation*}
+\hat{x}=\bigl[(p^\ell)^{\top},(v^\ell)^{\top},(q_b^\ell)^{\top},b_a^{\top},b_g^{\top}\bigr]^{\top}\in\mathbb{R}^{16}.
+\end{equation*}
+The true state $x_t$ is decomposed with the generalized addition operator $\oplus$:
+\begin{equation}
+\tag{16}\label{eq:16}
+x_t=\hat{x}\oplus\delta x,\qquad \delta x\rightarrow0\quad\text{after each injection and reset.}
+\end{equation}
+The component relations are
+\begin{equation}
+\tag{17}\label{eq:17}
+p_t^\ell=p^\ell+\delta p^\ell,\qquad v_t^\ell=v^\ell+\delta v^\ell,\qquad q_{b,t}^\ell=q_b^\ell\otimes\delta q(\delta\theta),
+\end{equation}
+\begin{equation}
+\tag{18}\label{eq:18}
+b_{a,t}=b_a+\delta b_a,\qquad b_{g,t}=b_g+\delta b_g.
+\end{equation}
+The attitude error is the three-component rotation vector $\delta\theta$, and $\delta q(\delta\theta)\simeq[1,\tfrac12\delta\theta^\top]^\top$ for small angles. The 15-dimensional error state is
+\begin{equation}
+\tag{19}\label{eq:19}
+\delta x=\bigl[(\delta p^\ell)^{\top},(\delta v^\ell)^{\top},\delta\theta^{\top},\delta b_a^{\top},\delta b_g^{\top}\bigr]^{\top}\in\mathbb{R}^{15}.
+\end{equation}
+This formulation avoids directly estimating a correction quaternion under a unit-norm constraint.
+
+\subsection{Nominal-State Kinematics}
+
+Let $\hat f^b=f_m^b-b_a$ and $\hat\omega_{\ell b}^b=\omega_m^b-b_g$. Over an IMU interval $\Delta t$, the nominal state is propagated as
+\begin{equation}
+\tag{20}\label{eq:20}
+\resizebox{0.98\columnwidth}{!}{$\displaystyle \begin{aligned}a_k^\ell&=C_b^\ell\hat f_k^b+g^\ell,\\p_{k+1}^\ell&=p_k^\ell+v_k^\ell\Delta t+\tfrac12a_k^\ell\Delta t^2,\\v_{k+1}^\ell&=v_k^\ell+a_k^\ell\Delta t,\\q_{b,k+1}^\ell&=\operatorname{norm}\!\left(q_{b,k}^\ell\otimes\operatorname{Exp}_q(\hat\omega_{\ell b,k}^b\Delta t)\right),\\b_{a,k+1}&=b_{a,k},\qquad b_{g,k+1}=b_{g,k}.\end{aligned}$}
+\end{equation}
+Here, $\operatorname{Exp}_q(\cdot)$ maps a rotation vector to a unit quaternion. IMU white noise and bias random walks are represented through the error-state covariance.
+
+\subsection{Error-State Kinematics}
+
+Linearization about the nominal trajectory using the right-multiplicative error gives
+\begin{equation}
+\tag{21}\label{eq:21}
+\resizebox{0.98\columnwidth}{!}{$\displaystyle \begin{aligned}\delta\dot p^\ell&=\delta v^\ell,\\\delta\dot v^\ell&=-C_b^\ell[\hat f^b]_\times\delta\theta-C_b^\ell\delta b_a-C_b^\ell n_a,\\\delta\dot\theta&=-[\hat\omega_{\ell b}^b]_\times\delta\theta-\delta b_g-n_g,\\\delta\dot b_a&=n_{wa},\qquad\delta\dot b_g=n_{wg}.\end{aligned}$}
+\end{equation}
+Here, $[\cdot]_\times$ is the skew-symmetric cross-product matrix; $n_a$ and $n_g$ are accelerometer and gyro white noise; and $n_{wa}$ and $n_{wg}$ drive the bias random walks.
+
+\subsection{Covariance Propagation and Noise Discretization}
+
+The continuous and discrete error dynamics are
+\begin{equation}
+\tag{22}\label{eq:22}
+\begin{aligned}\delta\dot x&=F_c\delta x+G_cw,\\\delta x_{k+1}&=\Phi_k\delta x_k+w_{d,k},\\\Phi_k&=\exp(F_c\Delta t).\end{aligned}
+\end{equation}
+For the short-range local Cartesian model,
+\begin{equation}
+\tag{23}\label{eq:23}
+\resizebox{0.98\columnwidth}{!}{$\displaystyle \begin{aligned}F_c&=\begin{bmatrix}0&I&0&0&0\\0&0&-C_b^\ell[\hat f^b]_\times&-C_b^\ell&0\\0&0&-[\hat\omega_{\ell b}^b]_\times&0&-I\\0&0&0&0&0\\0&0&0&0&0\end{bmatrix},\\[2pt]G_c&=\begin{bmatrix}0&0&0&0\\-C_b^\ell&0&0&0\\0&-I&0&0\\0&0&I&0\\0&0&0&I\end{bmatrix}.\end{aligned}$}
+\end{equation}
+With continuous-time noise power spectral density $Q_c$,
+\begin{equation}
+\tag{24}\label{eq:24}
+\begin{aligned}Q_{d,k}&=\int_0^{\Delta t}\Phi(\tau)G_cQ_cG_c^\top\Phi^\top(\tau)\,d\tau\\&\simeq G_cQ_cG_c^\top\Delta t,\\P_{k+1}^-&=\Phi_kP_k^+\Phi_k^\top+Q_{d,k}.\end{aligned}
+\end{equation}
+For small $\Delta t$, $\Phi_k\simeq I+F_c\Delta t$. No additional $\Delta t$ is applied after $Q_{d,k}$ has been discretized.
+
+\subsection{Measurement Update}
+
+FSS and wheel-odometry measurements are processed asynchronously through nonlinear functions $h_j(\hat x)$:
+\begin{equation}
+\tag{25}\label{eq:25}
+\begin{aligned}r_k&=z_k-h_j(\hat x_k^-),\\H_k&=\left.\frac{\partial h_j(\hat x_k^-\oplus\delta x)}{\partial\delta x}\right|_{\delta x=0}.\end{aligned}
+\end{equation}
+The heading residual is wrapped as $r_\psi=\operatorname{wrap}_{[-\pi,\pi)}(z_\psi-h_\psi)$. For a Jacobian $H_x$ with respect to the full nominal state, $H_k=H_xX_\delta$, where
+\begin{equation}
+\tag{26}\label{eq:26}
+\begin{aligned}X_\delta&=\operatorname{blkdiag}(I_6,Q_{\delta\theta},I_6),\\Q_{\delta\theta}&=\frac12\begin{bmatrix}-q_v^\top\\q_wI+[q_v]_\times\end{bmatrix},\\q&=[q_w,\ q_v^\top]^\top.\end{aligned}
+\end{equation}
+The innovation covariance and Kalman gain are
+\begin{equation}
+\tag{27}\label{eq:27}
+\begin{aligned}S_k&=H_kP_k^-H_k^\top+R_k,\\K_k&=P_k^-H_k^\top S_k^{-1}.\end{aligned}
+\end{equation}
+The error-state mean and covariance are updated in Joseph form:
+\begin{equation}
+\tag{28}\label{eq:28}
+\begin{aligned}\delta\hat x_k&=K_kr_k,\\P_k^+&=(I-K_kH_k)P_k^-(I-K_kH_k)^\top+K_kR_kK_k^\top.\end{aligned}
+\end{equation}
+Joseph form helps preserve covariance symmetry and positive semidefiniteness under finite-precision arithmetic.
+
+\subsection{Error Injection and Reset}
+
+After each measurement update, the estimated error is injected into the nominal state. With the right-multiplicative convention,
+\begin{equation}
+\tag{29}\label{eq:29}
+\resizebox{0.98\columnwidth}{!}{$\displaystyle \begin{aligned}p^\ell&\leftarrow p^\ell+\delta\hat p^\ell,\qquad v^\ell\leftarrow v^\ell+\delta\hat v^\ell,\\q_b^\ell&\leftarrow\operatorname{norm}\!\left(q_b^\ell\otimes\delta q(\delta\hat\theta)\right),\\b_a&\leftarrow b_a+\delta\hat b_a,\qquad b_g\leftarrow b_g+\delta\hat b_g,\\G_{\mathrm{reset}}&=\operatorname{blkdiag}\!\left(I_6,I-\tfrac12[\delta\hat\theta]_\times,I_6\right),\\P&\leftarrow G_{\mathrm{reset}}P^+G_{\mathrm{reset}}^\top,\qquad\delta\hat x\leftarrow0.\end{aligned}$}
+\end{equation}
+The corrected nominal state becomes the next linearization point. The quaternion is normalized after each injection, and the bias ordering $[b_a,b_g]$ is kept consistent in the state and covariance~\cite{sola2017quaternion}.
+
+\subsection{Abnormal-State Detection and Recovery Reinitialization}
+
+Pits, obstacles, and wheel--terrain impacts can cause abrupt encoder-speed changes and drive filter-tracking states beyond the normal range. The implementation monitors odometry and filter states, rejects contaminated wheel updates when thresholds are exceeded, and reinitializes the covariance and internal filter information. Updates resume after the measurements and states return to their normal ranges. This fault-recovery action is distinct from the routine injection and zero reset of Eq.~\eqref{eq:29}; system-level failure classification follows FMECA practice~\cite{borgovini1993fmeca}.
+
+\section{Simulation}
+
+The lunar rover environment is implemented using Microsoft AirSim and Unreal Engine. It includes constant lunar gravity, synthetic terrain, four-wheel independent-steering kinematics, and wheel--terrain interaction. IMU, FSS, and encoder sampling, noise, bias, and time synchronization are defined, and the simulated sensor data are supplied to the ESKF. Figure~\ref{fig:lunar_simulation_environment} shows the terrain and rover-driving environment.
+
+\begin{figure*}[t]
+\centering
+\begin{subfigure}[t]{0.49\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{pics/moon.png}
+  \caption{Lunar terrain scene}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{0.49\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{pics/sim_moon_car.png}
+  \caption{Rover driving simulation}
+\end{subfigure}
+\caption{Unreal Engine/AirSim lunar terrain and rover-driving simulation environment.}
+\label{fig:lunar_simulation_environment}
+\end{figure*}
+
+In the FSS simulation, the reference Sun vector is computed from rover position and time, transformed through MCI--MCMF and the fixed landing-site local frame, and expressed in the sensor frame. Angular noise and bias representative of the FSS are added.
+
+\begin{figure*}[t]
+\centering
+\begin{subfigure}[t]{0.235\textwidth}
+  \imageplaceholder[3.2cm]{09:00 simulation image}
+  \caption{Solar time 09:00}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{0.235\textwidth}
+  \imageplaceholder[3.2cm]{13:00 simulation image}
+  \caption{Solar time 13:00}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{0.235\textwidth}
+  \imageplaceholder[3.2cm]{17:00 simulation image}
+  \caption{Solar time 17:00}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{0.235\textwidth}
+  \imageplaceholder[3.2cm]{17:30 simulation image}
+  \caption{Solar time 17:30}
+\end{subfigure}
+\caption{Illumination conditions generated in Unreal Engine/AirSim at different solar times.}
+\label{fig:simulation_sun}
+\end{figure*}
+
+\subsection{Simulation Results}
+
+Three navigation configurations are compared:
+\begin{itemize}[leftmargin=*]
+\item INS only,
+\item INS + wheel odometry, and
+\item INS + wheel odometry + FSS.
+\end{itemize}
+The INS-only case shows unbounded inertial error accumulation. Wheel odometry improves short-range velocity and position, while the FSS bounds heading drift. Figure~\ref{fig:simulation_navigation_results} compares the reference and INS position, attitude, and velocity.
+
+\begin{figure*}[t]
+\centering
+\begin{subfigure}[t]{0.49\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{pics/position.png}
+  \caption{Position components}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{0.49\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{pics/atti.png}
+  \caption{Attitude components}
+\end{subfigure}
+\par\medskip
+\begin{subfigure}[t]{0.92\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{pics/vel.png}
+  \caption{Velocity components}
+\end{subfigure}
+\caption{Position, attitude, and velocity tracking of the INS solution against the simulation reference.}
+\label{fig:simulation_navigation_results}
+\end{figure*}
+
+\section{Hardware Tests}
+
+A full-scale four-wheel independent-steering rover is used to evaluate real-time implementation and practical applicability. The rover carries a Jetson Orin Nano/STM32F7 NAVCOM, an IMU, four wheel encoders, and steering-angle sensors. The STM32F7 collects encoder, steering, and low-level drivetrain data; the Jetson performs time synchronization, four-wheel odometry, and real-time ESKF navigation.
+
+\begin{figure*}[t]
+\centering
+\begin{subfigure}[t]{0.31\textwidth}
+  \imageplaceholder[3.6cm]{Rover electronics photograph}
+  \caption{Rover electronics integration}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{0.31\textwidth}
+  \imageplaceholder[3.6cm]{NAVCOM hardware photograph}
+  \caption{NAVCOM hardware}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{0.34\textwidth}
+  \imageplaceholder[3.6cm]{NAVCOM data-flow diagram}
+  \caption{NAVCOM data flow}
+\end{subfigure}
+\caption{Navigation computer and sensor-interface configuration of the full-scale rover.}
+\label{fig:hardware}
+\end{figure*}
+
+\subsection{Hardware Experimental Results}
+
+Wheel-contact changes while traversing pits and obstacles produced large disturbances in encoder-based speed and filter-tracking states. Figure~\ref{fig:filter_reinitialization} shows detection of an abnormal interval, rejection of contaminated updates, reinitialization, and recovery of the speed estimate. The procedure prevents a short disturbance from propagating into long-term position and attitude errors.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.96\textwidth]{pics/filter_reinit.png}
+\caption{Detection and filter reinitialization when pit and wheel--terrain disturbances drive the velocity estimate outside its normal range. Insets show the estimate before and after recovery.}
+\label{fig:filter_reinitialization}
+\end{figure*}
+
+Position estimates are compared with laser-range measurements, and heading estimates are compared with manually surveyed values in Tables~\ref{tab:position_results} and~\ref{tab:heading_results}. The results show general agreement for MD and AD drives and for zero-turn and post-drive heading tests.
+
+\begin{table}[t]
+\centering
+\caption{Position estimation results from the indoor rover experiments. All values are in metres.}
+\label{tab:position_results}
+\scriptsize
+\setlength{\tabcolsep}{2.6pt}
+\renewcommand{\arraystretch}{1.10}
+\begin{tabularx}{\columnwidth}{l*{4}{>{\centering\arraybackslash}X}}
+\toprule
+\textbf{Case} & \shortstack{\textbf{Measured}\\\boldmath{$x$}} & \shortstack{\textbf{Measured}\\\boldmath{$y$}} & \shortstack{\textbf{Estimated}\\\boldmath{$x$}} & \shortstack{\textbf{Estimated}\\\boldmath{$y$}} \\
+\midrule
+MD\#1 & 12.92 &  0.10 & 13.02 &  0.10 \\
+MD\#2 &  3.09 & -0.86 &  3.04 & -0.83 \\
+MD\#3 &  5.07 &  0.50 &  5.43 &  0.53 \\
+AD\#1 &  3.05 & -1.16 &  3.30 & -1.28 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Heading estimation results from the indoor rover experiments. Heading values are in degrees.}
+\label{tab:heading_results}
+\scriptsize
+\setlength{\tabcolsep}{3.2pt}
+\renewcommand{\arraystretch}{1.10}
+\begin{tabularx}{\columnwidth}{lcc>{\centering\arraybackslash}X}
+\toprule
+\textbf{Case} & \shortstack{\textbf{True}\\\textbf{heading}} & \shortstack{\textbf{Estimated}\\\textbf{heading}} & \textbf{Maneuver} \\
+\midrule
+Atti \#1 &  25.00 &  25.57 & Zero-turn \\
+Atti \#2 &  35.00 &  35.00 & Zero-turn \\
+Atti \#3 &  -2.00 &  -1.80 & After move \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Conclusion}
+This section will be completed after the final quantitative simulation and hardware-test results are confirmed.
+
+\section*{Acknowledgements}
+% TODO: Add project and funding information.
+
+\bibliography{biblio}
+
+\end{document}
