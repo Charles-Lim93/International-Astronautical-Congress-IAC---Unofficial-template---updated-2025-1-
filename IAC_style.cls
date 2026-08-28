@@ -47,18 +47,19 @@
 % Document setup
 \RequirePackage[margin=2.25cm,top=3.35cm,bottom=3.35cm,headheight=\baselineskip]{geometry} % page layout
 \setlength{\columnsep}{0.8cm} % column spacing
-% Times-compatible fonts with pdfLaTeX/XeLaTeX compatibility.
+% Times-compatible text with the original IAC/newtx math appearance.
 \RequirePackage{iftex}
 \ifPDFTeX
   \RequirePackage[T1]{fontenc}
   \RequirePackage{newtxmath,newtxtext}
 \else
-  \RequirePackage{fontspec}
-  \RequirePackage{unicode-math}
+  % Keep the lighter, well-proportioned newtx mathematics under XeLaTeX.
+  % Load Type 1 math before fontspec, as recommended by newtx.
+  \RequirePackage{newtxmath}
+  \RequirePackage[no-math]{fontspec}
   \setmainfont{TeX Gyre Termes}
   \setsansfont{TeX Gyre Heros}
   \setmonofont{TeX Gyre Cursor}
-  \setmathfont{TeX Gyre Termes Math}
 \fi
 
 % Captions

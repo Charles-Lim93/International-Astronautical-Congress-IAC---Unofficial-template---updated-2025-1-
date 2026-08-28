@@ -10,8 +10,7 @@
   \setmainhangulfont{UnBatang}
   \setsanshangulfont{UnDotum}
 }
-% IAC_style already loads unicode-math under XeLaTeX.
-% Avoid amssymb/bm and custom \skew redefinitions that conflict with it.
+% IAC_style provides the Times-compatible newtx mathematics.
 \usepackage{amsmath}
 \usepackage{enumitem}
 \usepackage{subcaption}
@@ -345,7 +344,14 @@ FSS 출력을 사용하는 가장 직접적인 방법은 센서좌표계에서 �
 
 \begin{equation}
 \tag{9}\label{eq:9}
-y_k^{\mathrm{LOS}} \;=\; h_{\mathrm{LOS}}(x_k; \widetilde{\mathcal{X}}, t) + e_{ss,k} \;=\; \begin{bmatrix} \arctan\!\bigl(S_y^{ss}/S_x^{ss}\bigr) \\[2pt] -\arcsin\!\bigl(S_z^{ss}\bigr) \end{bmatrix} + e_{ss,k},
+\begin{aligned}
+y_k^{\mathrm{LOS}}
+  &=h_{\mathrm{LOS}}(x_k;\widetilde{\mathcal X},t)+e_{ss,k}\\
+  &=\begin{bmatrix}
+    \arctan\!\bigl(S_y^{ss}/S_x^{ss}\bigr)\\[2pt]
+    -\arcsin\!\bigl(S_z^{ss}\bigr)
+  \end{bmatrix}+e_{ss,k}.
+\end{aligned}
 \end{equation}
 
 또는 동등하게 $y_k^{\mathrm{LOS}} = \mathbf{S}^{ss}(t) + e_{ss,k}$로 표현할 수 있다. 측정잡음 $e_{ss,k}$는 FSS 각도 정확도 사양으로부터 도출된 공분산을 갖는 영평균 Gaussian 잡음으로 모델링한다. 원시 형식은 센서 원시데이터를 사용할 수 있고 센서 내부의 광점중심 추출 알고리즘에 대한 통계적 특성이 충분히 규명된 경우에 적합하다. 주된 단점은 로버 상태에 대한 Jacobian이 하나의 관측행렬에서 자세, 위치 및 달 자전 기구학을 서로 결합한다는 점이다.
@@ -403,7 +409,11 @@ v_{RL} \;=\; r_w\, n_{RL}, \qquad v_{RR} \;=\; r_w\, n_{RR},
 
 \begin{equation}
 \tag{14}\label{eq:14}
-v_{\mathrm{avg}} \;=\; \tfrac{1}{2}\bigl(v_{RL} + v_{RR}\bigr), \quad \omega_{bz} \;=\; \dfrac{v_{RR} - v_{RL}}{2d}, \quad R \;=\; \dfrac{v_{\mathrm{avg}}}{\omega_{bz}}.
+\begin{aligned}
+v_{\mathrm{avg}}&=\tfrac12\bigl(v_{RL}+v_{RR}\bigr),\\
+\omega_{bz}&=\dfrac{v_{RR}-v_{RL}}{2d},
+&R&=\dfrac{v_{\mathrm{avg}}}{\omega_{bz}}.
+\end{aligned}
 \end{equation}
 
 따라서 ESKF에 제공되는 오도메트리 의사측정값은 다음과 같다.
@@ -469,7 +479,16 @@ IMU 측정값을 $f_m^b$와 $\omega_m^b$라 하고, 바이어스가 제거된 �
 
 \begin{equation}
 \tag{20}\label{eq:20}
-\resizebox{0.98\columnwidth}{!}{$\displaystyle \begin{aligned}a_k^\ell &= C_b^\ell\hat f_k^b+g^\ell,\\p_{k+1}^\ell &=p_k^\ell+v_k^\ell\Delta t+\tfrac12a_k^\ell\Delta t^2,\\v_{k+1}^\ell &=v_k^\ell+a_k^\ell\Delta t,\\q_{b,k+1}^\ell &=\operatorname{norm}\!\left(q_{b,k}^\ell\otimes\operatorname{Exp}_q(\hat\omega_{\ell b,k}^b\Delta t)\right),\\b_{a,k+1}&=b_{a,k},\qquad b_{g,k+1}=b_{g,k}.\end{aligned}$}
+\begin{aligned}
+a_k^\ell &= C_b^\ell\hat f_k^b+g^\ell,\\
+p_{k+1}^\ell &=p_k^\ell+v_k^\ell\Delta t
+  +\tfrac12a_k^\ell\Delta t^2,\\
+v_{k+1}^\ell &=v_k^\ell+a_k^\ell\Delta t,\\
+q_{b,k+1}^\ell
+  &=\operatorname{norm}\!\Bigl(q_{b,k}^\ell\otimes{}\\[-2pt]
+  &\qquad \operatorname{Exp}_q(\hat\omega_{\ell b,k}^b\Delta t)\Bigr),\\
+b_{a,k+1}&=b_{a,k},\qquad b_{g,k+1}=b_{g,k}.
+\end{aligned}
 \end{equation}
 
 여기서 $\operatorname{Exp}_q(\cdot)$는 회전벡터를 단위 쿼터니언으로 변환하는 지수사상이고, $\operatorname{norm}(\cdot)$은 쿼터니언 정규화를 의미한다. 공칭전파에는 잡음의 평균값 0을 사용하며, IMU 백색잡음과 바이어스 랜덤워크는 오차상태 공분산을 통해 반영한다.
@@ -480,7 +499,15 @@ right-multiplicative 자세오차를 기준으로 공칭궤적 주위에서 1차
 
 \begin{equation}
 \tag{21}\label{eq:21}
-\resizebox{0.98\columnwidth}{!}{$\displaystyle \begin{aligned}\delta\dot p^\ell&=\delta v^\ell,\\\delta\dot v^\ell&=-C_b^\ell[\hat f^b]_\times\delta\theta-C_b^\ell\delta b_a-C_b^\ell n_a,\\\delta\dot\theta&=-[\hat\omega_{\ell b}^b]_\times\delta\theta-\delta b_g-n_g,\\\delta\dot b_a&=n_{wa},\qquad\delta\dot b_g=n_{wg}.\end{aligned}$}
+\begin{aligned}
+\delta\dot p^\ell&=\delta v^\ell,\\
+\delta\dot v^\ell
+  &=-C_b^\ell[\hat f^b]_\times\delta\theta-C_b^\ell\delta b_a\\
+  &\qquad{}-C_b^\ell n_a,\\
+\delta\dot\theta
+  &=-[\hat\omega_{\ell b}^b]_\times\delta\theta-\delta b_g-n_g,\\
+\delta\dot b_a&=n_{wa},\qquad\delta\dot b_g=n_{wg}.
+\end{aligned}
 \end{equation}
 
 여기서 $[\cdot]_{\times}$는 반대칭 외적행렬이고, $n_a$와 $n_g$는 각각 가속도계 및 자이로스코프 백색잡음이며, $n_{wa}$와 $n_{wg}$는 바이어스 랜덤워크를 구동하는 백색잡음이다.
@@ -498,7 +525,26 @@ right-multiplicative 자세오차를 기준으로 공칭궤적 주위에서 1차
 
 \begin{equation}
 \tag{23}\label{eq:23}
-\resizebox{0.98\columnwidth}{!}{$\displaystyle \begin{aligned}F_c&=\begin{bmatrix}0&I&0&0&0\\0&0&-C_b^\ell[\hat f^b]_\times&-C_b^\ell&0\\0&0&-[\hat\omega_{\ell b}^b]_\times&0&-I\\0&0&0&0&0\\0&0&0&0&0\end{bmatrix},\\[2pt]G_c&=\begin{bmatrix}0&0&0&0\\-C_b^\ell&0&0&0\\0&-I&0&0\\0&0&I&0\\0&0&0&I\end{bmatrix}.\end{aligned}$}
+\begin{aligned}
+A_f&\equiv[\hat f^b]_\times,
+&A_\omega&\equiv[\hat\omega_{\ell b}^b]_\times,\\[2pt]
+F_c&=
+\begin{bmatrix}
+0&I&0&0&0\\
+0&0&-C_b^\ell A_f&-C_b^\ell&0\\
+0&0&-A_\omega&0&-I\\
+0&0&0&0&0\\
+0&0&0&0&0
+\end{bmatrix},\\[4pt]
+G_c&=
+\begin{bmatrix}
+0&0&0&0\\
+-C_b^\ell&0&0&0\\
+0&-I&0&0\\
+0&0&I&0\\
+0&0&0&I
+\end{bmatrix}.
+\end{aligned}
 \end{equation}
 
 $Q_c$를 연속시간 잡음 전력스펙트럼밀도 행렬이라 하면 이산 공정잡음 공분산과 상태공분산 전파는 다음과 같다.
@@ -548,7 +594,19 @@ Joseph form은 유한정밀도 계산에서 공분산의 대칭성과 양의 준
 
 \begin{equation}
 \tag{29}\label{eq:29}
-\resizebox{0.98\columnwidth}{!}{$\displaystyle \begin{aligned}p^\ell&\leftarrow p^\ell+\delta\hat p^\ell,\qquad v^\ell\leftarrow v^\ell+\delta\hat v^\ell,\\q_b^\ell&\leftarrow\operatorname{norm}\!\left(q_b^\ell\otimes\delta q(\delta\hat\theta)\right),\\b_a&\leftarrow b_a+\delta\hat b_a,\qquad b_g\leftarrow b_g+\delta\hat b_g,\\G_{\mathrm{reset}}&=\operatorname{blkdiag}\!\left(I_6,I-\tfrac12[\delta\hat\theta]_\times,I_6\right),\\P&\leftarrow G_{\mathrm{reset}}P^+G_{\mathrm{reset}}^\top,\qquad\delta\hat x\leftarrow0.\end{aligned}$}
+\begin{aligned}
+p^\ell&\leftarrow p^\ell+\delta\hat p^\ell,
+&v^\ell&\leftarrow v^\ell+\delta\hat v^\ell,\\
+q_b^\ell&\leftarrow
+  \operatorname{norm}\!\left(q_b^\ell\otimes\delta q(\delta\hat\theta)\right),\\
+b_a&\leftarrow b_a+\delta\hat b_a,
+&b_g&\leftarrow b_g+\delta\hat b_g,\\
+G_{\mathrm{reset}}
+  &=\operatorname{blkdiag}\!\left(
+    I_6,I-\tfrac12[\delta\hat\theta]_\times,I_6\right),\\
+P&\leftarrow G_{\mathrm{reset}}P^+G_{\mathrm{reset}}^\top,
+&\delta\hat x&\leftarrow0.
+\end{aligned}
 \end{equation}
 
 이 과정을 통해 다음 전파단계의 선형화 기준점은 보정된 공칭상태와 일치한다. 구현에서는 매 주입 후 쿼터니언을 정규화하고, 상태벡터와 공분산에서 가속도계 바이어스와 자이로스코프 바이어스의 순서를 $[b_a,\ b_g]$로 동일하게 유지한다~\cite{sola2017quaternion}.

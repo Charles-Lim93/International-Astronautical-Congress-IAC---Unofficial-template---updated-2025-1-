@@ -2,7 +2,7 @@
 \documentclass[]{IAC_style}
 
 % English manuscript. Compile with XeLaTeX.
-% IAC_style provides unicode-math and the TeX Gyre Termes math font.
+% IAC_style provides the Times-compatible newtx mathematics.
 \usepackage{amsmath}
 \usepackage{enumitem}
 \usepackage{subcaption}
@@ -270,7 +270,14 @@ Equations~\eqref{eq:7} and~\eqref{eq:8} define the prediction chain shared by th
 The FSS output can be processed directly as a measured unit Sun vector in the sensor frame, either as a three-component unit vector or as a two-component azimuth--elevation observation:
 \begin{equation}
 \tag{9}\label{eq:9}
-y_k^{\mathrm{LOS}}=h_{\mathrm{LOS}}(x_k;\widetilde{\mathcal X},t)+e_{ss,k}=\begin{bmatrix}\arctan(S_y^{ss}/S_x^{ss})\\[2pt]-\arcsin(S_z^{ss})\end{bmatrix}+e_{ss,k}.
+\begin{aligned}
+y_k^{\mathrm{LOS}}
+  &=h_{\mathrm{LOS}}(x_k;\widetilde{\mathcal X},t)+e_{ss,k}\\
+  &=\begin{bmatrix}
+    \arctan\!\bigl(S_y^{ss}/S_x^{ss}\bigr)\\[2pt]
+    -\arcsin\!\bigl(S_z^{ss}\bigr)
+  \end{bmatrix}+e_{ss,k}.
+\end{aligned}
 \end{equation}
 Equivalently, $y_k^{\mathrm{LOS}}=\mathbf{S}^{ss}(t)+e_{ss,k}$. The noise $e_{ss,k}$ is modeled as zero-mean Gaussian noise with covariance derived from the FSS angular-accuracy specification. The raw-vector form is useful when the sensor raw data and centroid statistics are available, but its Jacobian couples attitude, position, and lunar-rotation kinematics.
 
@@ -320,7 +327,11 @@ v_{RL}=r_wn_{RL},\qquad v_{RR}=r_wn_{RR}.
 The longitudinal speed, yaw rate, and instantaneous radius are
 \begin{equation}
 \tag{14}\label{eq:14}
-v_{\mathrm{avg}}=\tfrac{1}{2}(v_{RL}+v_{RR}),\quad \omega_{bz}=\dfrac{v_{RR}-v_{RL}}{2d},\quad R=\dfrac{v_{\mathrm{avg}}}{\omega_{bz}}.
+\begin{aligned}
+v_{\mathrm{avg}}&=\tfrac12\bigl(v_{RL}+v_{RR}\bigr),\\
+\omega_{bz}&=\dfrac{v_{RR}-v_{RL}}{2d},
+&R&=\dfrac{v_{\mathrm{avg}}}{\omega_{bz}}.
+\end{aligned}
 \end{equation}
 The odometry pseudo-measurement is
 \begin{equation}
@@ -369,7 +380,16 @@ This formulation avoids directly estimating a correction quaternion under a unit
 Let $\hat f^b=f_m^b-b_a$ and $\hat\omega_{\ell b}^b=\omega_m^b-b_g$. Over an IMU interval $\Delta t$, the nominal state is propagated as
 \begin{equation}
 \tag{20}\label{eq:20}
-\resizebox{0.98\columnwidth}{!}{$\displaystyle \begin{aligned}a_k^\ell&=C_b^\ell\hat f_k^b+g^\ell,\\p_{k+1}^\ell&=p_k^\ell+v_k^\ell\Delta t+\tfrac12a_k^\ell\Delta t^2,\\v_{k+1}^\ell&=v_k^\ell+a_k^\ell\Delta t,\\q_{b,k+1}^\ell&=\operatorname{norm}\!\left(q_{b,k}^\ell\otimes\operatorname{Exp}_q(\hat\omega_{\ell b,k}^b\Delta t)\right),\\b_{a,k+1}&=b_{a,k},\qquad b_{g,k+1}=b_{g,k}.\end{aligned}$}
+\begin{aligned}
+a_k^\ell&=C_b^\ell\hat f_k^b+g^\ell,\\
+p_{k+1}^\ell&=p_k^\ell+v_k^\ell\Delta t
+  +\tfrac12a_k^\ell\Delta t^2,\\
+v_{k+1}^\ell&=v_k^\ell+a_k^\ell\Delta t,\\
+q_{b,k+1}^\ell
+  &=\operatorname{norm}\!\Bigl(q_{b,k}^\ell\otimes{}\\[-2pt]
+  &\qquad \operatorname{Exp}_q(\hat\omega_{\ell b,k}^b\Delta t)\Bigr),\\
+b_{a,k+1}&=b_{a,k},\qquad b_{g,k+1}=b_{g,k}.
+\end{aligned}
 \end{equation}
 Here, $\operatorname{Exp}_q(\cdot)$ maps a rotation vector to a unit quaternion. IMU white noise and bias random walks are represented through the error-state covariance.
 
@@ -378,7 +398,15 @@ Here, $\operatorname{Exp}_q(\cdot)$ maps a rotation vector to a unit quaternion.
 Linearization about the nominal trajectory using the right-multiplicative error gives
 \begin{equation}
 \tag{21}\label{eq:21}
-\resizebox{0.98\columnwidth}{!}{$\displaystyle \begin{aligned}\delta\dot p^\ell&=\delta v^\ell,\\\delta\dot v^\ell&=-C_b^\ell[\hat f^b]_\times\delta\theta-C_b^\ell\delta b_a-C_b^\ell n_a,\\\delta\dot\theta&=-[\hat\omega_{\ell b}^b]_\times\delta\theta-\delta b_g-n_g,\\\delta\dot b_a&=n_{wa},\qquad\delta\dot b_g=n_{wg}.\end{aligned}$}
+\begin{aligned}
+\delta\dot p^\ell&=\delta v^\ell,\\
+\delta\dot v^\ell
+  &=-C_b^\ell[\hat f^b]_\times\delta\theta-C_b^\ell\delta b_a\\
+  &\qquad{}-C_b^\ell n_a,\\
+\delta\dot\theta
+  &=-[\hat\omega_{\ell b}^b]_\times\delta\theta-\delta b_g-n_g,\\
+\delta\dot b_a&=n_{wa},\qquad\delta\dot b_g=n_{wg}.
+\end{aligned}
 \end{equation}
 Here, $[\cdot]_\times$ is the skew-symmetric cross-product matrix; $n_a$ and $n_g$ are accelerometer and gyro white noise; and $n_{wa}$ and $n_{wg}$ drive the bias random walks.
 
@@ -392,7 +420,26 @@ The continuous and discrete error dynamics are
 For the short-range local Cartesian model,
 \begin{equation}
 \tag{23}\label{eq:23}
-\resizebox{0.98\columnwidth}{!}{$\displaystyle \begin{aligned}F_c&=\begin{bmatrix}0&I&0&0&0\\0&0&-C_b^\ell[\hat f^b]_\times&-C_b^\ell&0\\0&0&-[\hat\omega_{\ell b}^b]_\times&0&-I\\0&0&0&0&0\\0&0&0&0&0\end{bmatrix},\\[2pt]G_c&=\begin{bmatrix}0&0&0&0\\-C_b^\ell&0&0&0\\0&-I&0&0\\0&0&I&0\\0&0&0&I\end{bmatrix}.\end{aligned}$}
+\begin{aligned}
+A_f&\equiv[\hat f^b]_\times,
+&A_\omega&\equiv[\hat\omega_{\ell b}^b]_\times,\\[2pt]
+F_c&=
+\begin{bmatrix}
+0&I&0&0&0\\
+0&0&-C_b^\ell A_f&-C_b^\ell&0\\
+0&0&-A_\omega&0&-I\\
+0&0&0&0&0\\
+0&0&0&0&0
+\end{bmatrix},\\[4pt]
+G_c&=
+\begin{bmatrix}
+0&0&0&0\\
+-C_b^\ell&0&0&0\\
+0&-I&0&0\\
+0&0&I&0\\
+0&0&0&I
+\end{bmatrix}.
+\end{aligned}
 \end{equation}
 With continuous-time noise power spectral density $Q_c$,
 \begin{equation}
@@ -430,7 +477,19 @@ Joseph form helps preserve covariance symmetry and positive semidefiniteness und
 After each measurement update, the estimated error is injected into the nominal state. With the right-multiplicative convention,
 \begin{equation}
 \tag{29}\label{eq:29}
-\resizebox{0.98\columnwidth}{!}{$\displaystyle \begin{aligned}p^\ell&\leftarrow p^\ell+\delta\hat p^\ell,\qquad v^\ell\leftarrow v^\ell+\delta\hat v^\ell,\\q_b^\ell&\leftarrow\operatorname{norm}\!\left(q_b^\ell\otimes\delta q(\delta\hat\theta)\right),\\b_a&\leftarrow b_a+\delta\hat b_a,\qquad b_g\leftarrow b_g+\delta\hat b_g,\\G_{\mathrm{reset}}&=\operatorname{blkdiag}\!\left(I_6,I-\tfrac12[\delta\hat\theta]_\times,I_6\right),\\P&\leftarrow G_{\mathrm{reset}}P^+G_{\mathrm{reset}}^\top,\qquad\delta\hat x\leftarrow0.\end{aligned}$}
+\begin{aligned}
+p^\ell&\leftarrow p^\ell+\delta\hat p^\ell,
+&v^\ell&\leftarrow v^\ell+\delta\hat v^\ell,\\
+q_b^\ell&\leftarrow
+  \operatorname{norm}\!\left(q_b^\ell\otimes\delta q(\delta\hat\theta)\right),\\
+b_a&\leftarrow b_a+\delta\hat b_a,
+&b_g&\leftarrow b_g+\delta\hat b_g,\\
+G_{\mathrm{reset}}
+  &=\operatorname{blkdiag}\!\left(
+    I_6,I-\tfrac12[\delta\hat\theta]_\times,I_6\right),\\
+P&\leftarrow G_{\mathrm{reset}}P^+G_{\mathrm{reset}}^\top,
+&\delta\hat x&\leftarrow0.
+\end{aligned}
 \end{equation}
 The corrected nominal state becomes the next linearization point. The quaternion is normalized after each injection, and the bias ordering $[b_a,b_g]$ is kept consistent in the state and covariance~\cite{sola2017quaternion}.
 
