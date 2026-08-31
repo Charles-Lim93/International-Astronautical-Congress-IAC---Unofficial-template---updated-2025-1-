@@ -107,20 +107,13 @@ Section 2 presents the navigation architecture and reference frames. Section 3 d
 
 \subsection{Overall Navigation Architecture}
 
-The sensor-fusion concept is shown in Fig.~\ref{fig:navigation_overview}, the hardware organization in Fig.~\ref{fig:hw_architecture}, and the detailed multisensor software flow in Fig.~\ref{fig:navigation_sw_flow}. A strapdown INS propagates attitude, velocity, and position at high rate using IMU angular-rate and specific-force measurements. The FSS, together with the onboard clock and ephemeris, generates an absolute heading observation by comparing measured and predicted Sun directions. The wheel encoders provide body-frame velocity and yaw-rate observations through the four-wheel kinematic model. The ESKF tracks the linearized errors of the nominal INS state and uses the aiding measurements to correct long-term drift. A monitoring and recovery channel rejects abnormal wheel measurements and reinitializes filter information when disturbances caused by pits or wheel--terrain impacts exceed the normal range.
+The sensor-fusion concept is shown in Fig.~\ref{fig:navigation_overview}, and the detailed multisensor software flow is shown in Fig.~\ref{fig:navigation_sw_flow}. A strapdown INS propagates attitude, velocity, and position at high rate using IMU angular-rate and specific-force measurements. The FSS, together with the onboard clock and ephemeris, generates an absolute heading observation by comparing measured and predicted Sun directions. The wheel encoders provide body-frame velocity and yaw-rate observations through the four-wheel kinematic model. The ESKF tracks the linearized errors of the nominal INS state and uses the aiding measurements to correct long-term drift. A monitoring and recovery channel rejects abnormal wheel measurements and reinitializes filter information when disturbances caused by pits or wheel--terrain impacts exceed the normal range.
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.96\textwidth]{pics/overview.png}
 \caption{Overview of the ESKF-based navigation system integrating the FSS, IMU, and wheel odometry.}
 \label{fig:navigation_overview}
-\end{figure*}
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.98\textwidth]{pics/hw_architecture.png}
-\caption{Hardware architecture of the integrated navigation system.}
-\label{fig:hw_architecture}
 \end{figure*}
 
 \begin{figure*}[t]
@@ -310,12 +303,12 @@ The front axle uses the corresponding equations with opposite sign. The effectiv
 \delta_{\mathrm{rover}}=\tfrac{1}{2}(\delta_{LB}+\delta_{RB}).
 \end{equation}
 
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
-\includegraphics[width=0.92\textwidth]{pics/odometry.png}
+\includegraphics[width=\linewidth]{pics/odometry.png}
 \caption{Four-wheel independent-steering Ackermann geometry and wheel-angle definitions about the instantaneous centre of rotation.}
 \label{fig:odometry_geometry}
-\end{figure*}
+\end{figure}
 
 \subsection{Velocity and Yaw-Rate Observations}
 
@@ -494,6 +487,7 @@ P&\leftarrow G_{\mathrm{reset}}P^+G_{\mathrm{reset}}^\top,
 The corrected nominal state becomes the next linearization point. The quaternion is normalized after each injection, and the bias ordering $[b_a,b_g]$ is kept consistent in the state and covariance~\cite{sola2017quaternion}.
 
 \subsection{Abnormal-State Detection and Recovery Reinitialization}
+\label{sec:recovery_reinitialization}
 
 Pits, obstacles, and wheel--terrain impacts can cause abrupt encoder-speed changes and drive filter-tracking states beyond the normal range. The implementation monitors odometry and filter states, rejects contaminated wheel updates when thresholds are exceeded, and reinitializes the covariance and internal filter information. Updates resume after the measurements and states return to their normal ranges. This fault-recovery action is distinct from the routine injection and zero reset of Eq.~\eqref{eq:29}; system-level failure classification follows FMECA practice~\cite{borgovini1993fmeca}.
 
@@ -551,31 +545,39 @@ Three navigation configurations are compared:
 \end{itemize}
 The INS-only case shows unbounded inertial error accumulation. Wheel odometry improves short-range velocity and position, while the FSS bounds heading drift. Figure~\ref{fig:simulation_navigation_results} compares the reference and INS position, attitude, and velocity.
 
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
-\begin{subfigure}[t]{0.49\textwidth}
+\begin{subfigure}[t]{0.98\linewidth}
   \centering
   \includegraphics[width=\linewidth]{pics/position.png}
   \caption{Position components}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.49\textwidth}
+\end{subfigure}
+\par\smallskip
+\begin{subfigure}[t]{0.98\linewidth}
   \centering
   \includegraphics[width=\linewidth]{pics/atti.png}
   \caption{Attitude components}
 \end{subfigure}
-\par\medskip
-\begin{subfigure}[t]{0.92\textwidth}
+\par\smallskip
+\begin{subfigure}[t]{0.98\linewidth}
   \centering
   \includegraphics[width=\linewidth]{pics/vel.png}
   \caption{Velocity components}
 \end{subfigure}
 \caption{Position, attitude, and velocity tracking of the INS solution against the simulation reference.}
 \label{fig:simulation_navigation_results}
-\end{figure*}
+\end{figure}
 
 \section{Hardware Tests}
 
-A full-scale four-wheel independent-steering rover is used to evaluate real-time implementation and practical applicability. The rover carries a Jetson Orin Nano/STM32F7 NAVCOM, an IMU, four wheel encoders, and steering-angle sensors. The STM32F7 collects encoder, steering, and low-level drivetrain data; the Jetson performs time synchronization, four-wheel odometry, and real-time ESKF navigation.
+A full-scale four-wheel independent-steering rover is used to evaluate real-time implementation and practical applicability. Figure~\ref{fig:hw_architecture} shows the complete hardware organization used in the experiments. The rover carries a Jetson Orin Nano/STM32F7 NAVCOM, an IMU, four wheel encoders, and steering-angle sensors. The STM32F7 collects encoder, steering, and low-level drivetrain data; the Jetson performs time synchronization, four-wheel odometry, and real-time ESKF navigation.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.98\textwidth]{pics/hw_architecture.png}
+\caption{Hardware architecture of the navigation system used in the experiments.}
+\label{fig:hw_architecture}
+\end{figure*}
 
 \begin{figure*}[t]
 \centering
@@ -597,14 +599,16 @@ A full-scale four-wheel independent-steering rover is used to evaluate real-time
 
 \subsection{Hardware Experimental Results}
 
-Wheel-contact changes while traversing pits and obstacles produced large disturbances in encoder-based speed and filter-tracking states. Figure~\ref{fig:filter_reinitialization} shows detection of an abnormal interval, rejection of contaminated updates, reinitialization, and recovery of the speed estimate. The procedure prevents a short disturbance from propagating into long-term position and attitude errors.
+Wheel-contact changes while traversing pits and obstacles produced large disturbances in encoder-based speed and filter-tracking states. During the hardware experiments, the recovery-reinitialization function described in Sec.~\ref{sec:recovery_reinitialization} was therefore activated as a supervisory layer around the ESKF. The function monitors the encoder-derived longitudinal speed and the corresponding filter-tracking state in real time. When the tracking state leaves its predefined normal range, the interval is classified as abnormal and the contaminated wheel-odometry update is temporarily rejected. The error-state mean is then returned to zero, while the covariance and internal filter information are restored to their initial operating conditions. Wheel-odometry updates resume after the measurements and estimated states return to the normal range. This experimental protection differs from the routine error injection and zero reset of Eq.~\eqref{eq:29}; its purpose is to prevent a gross disturbance from propagating into the subsequent position and attitude estimates.
 
-\begin{figure*}[t]
+Figure~\ref{fig:filter_reinitialization} shows the interval in which pit and wheel--terrain disturbances drive the estimated speed outside the normal range and the subsequent return to stable tracking after reinitialization. The complete time history and the enlarged interval are shown together to compare the estimated velocity before and after recovery.
+
+\begin{figure}[t]
 \centering
-\includegraphics[width=0.96\textwidth]{pics/filter_reinit.png}
+\includegraphics[width=\linewidth]{pics/filter_reinit.png}
 \caption{Detection and filter reinitialization when pit and wheel--terrain disturbances drive the velocity estimate outside its normal range. Insets show the estimate before and after recovery.}
 \label{fig:filter_reinitialization}
-\end{figure*}
+\end{figure}
 
 Position estimates are compared with laser-range measurements, and heading estimates are compared with manually surveyed values in Tables~\ref{tab:position_results} and~\ref{tab:heading_results}. The results show general agreement for MD and AD drives and for zero-turn and post-drive heading tests.
 
