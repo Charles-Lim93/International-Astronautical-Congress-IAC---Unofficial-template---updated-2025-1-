@@ -16,6 +16,7 @@
 \usepackage{subcaption}
 \usepackage{array}
 \usepackage{microtype}
+\usepackage{placeins}
 \graphicspath{{pics/}{pics/docx/}}
 
 \newcommand{\imageplaceholder}[2][3.1cm]{%
@@ -682,43 +683,22 @@ FSS 시뮬레이션에서는 로버의 위치와 시각에 따른 기준 태양�
 
 \end{itemize}
 
-INS-only 결과는 관성항법의 기본적인 오차 누적특성을 나타낸다. 휠 오도메트리를 추가한 결과를 통해 속도 및 단거리 위치추정 개선효과를 평가하며, FSS를 추가한 결과를 통해 방위각 드리프트 제한효과를 분석한다. Fig.~\ref{fig:simulation_navigation_results}은 기준 궤적과 INS 결과의 위치, 자세 및 속도 추종성능을 비교한다.
-
-\begin{figure}[t]
-\centering
-\begin{subfigure}[t]{0.98\linewidth}
-  \centering
-  \includegraphics[width=\linewidth]{pics/position.png}
-  \caption{Position components}
-\end{subfigure}
-\par\smallskip
-\begin{subfigure}[t]{0.98\linewidth}
-  \centering
-  \includegraphics[width=\linewidth]{pics/atti.png}
-  \caption{Attitude components}
-\end{subfigure}
-\par\smallskip
-\begin{subfigure}[t]{0.98\linewidth}
-  \centering
-  \includegraphics[width=\linewidth]{pics/vel.png}
-  \caption{Velocity components}
-\end{subfigure}
-\caption{시뮬레이션 기준값과 INS 항법해의 위치, 자세 및 속도 추종결과.}
-\label{fig:simulation_navigation_results}
-\end{figure}
-
-\section{하드웨어 시험}
-
-제안 알고리즘의 실시간 구현과 실제 로버 적용 가능성을 평가하기 위하여 실물 크기 4륜 독립조향 로버를 이용한다. 실험에 사용한 전체 하드웨어 구성은 Fig.~\ref{fig:hw_architecture}에 나타내었다. 로버에는 Jetson Orin Nano와 STM32F7 기반 NAVCOM, IMU, 4개의 휠 엔코더 및 조향각 측정장치를 탑재한다.
-
-STM32F7은 엔코더, 조향장치 및 저수준 구동계 데이터를 수집하고, Jetson Orin Nano는 센서 시간동기, 4륜 오도메트리 계산과 ESKF 항법을 실시간으로 수행한다.
+INS-only 결과는 관성항법의 기본적인 오차 누적특성을 나타낸다. 휠 오도메트리를 추가한 결과를 통해 속도 및 단거리 위치추정 개선효과를 평가하며, FSS를 추가한 결과를 통해 방위각 드리프트 제한효과를 분석한다. 시뮬레이션에서 사용한 센서 입력과 NAVCOM 기반 항법처리 흐름은 Fig.~\ref{fig:hw_architecture}에 나타내었다.
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.98\textwidth]{pics/hw_architecture.png}
-\caption{실험에 사용한 전체 항법 시스템의 하드웨어 구성.}
+\caption{시뮬레이션 검증에 사용한 센서 입력 및 NAVCOM 기반 항법처리 구성.}
 \label{fig:hw_architecture}
 \end{figure*}
+
+\FloatBarrier
+
+\section{하드웨어 시험}
+
+제안 알고리즘의 실시간 구현과 실제 로버 적용 가능성을 평가하기 위하여 실물 크기 4륜 독립조향 로버를 이용한다. 로버에는 Jetson Orin Nano와 STM32F7 기반 NAVCOM, IMU, 4개의 휠 엔코더 및 조향각 측정장치를 탑재한다.
+
+STM32F7은 엔코더, 조향장치 및 저수준 구동계 데이터를 수집하고, Jetson Orin Nano는 센서 시간동기, 4륜 오도메트리 계산과 ESKF 항법을 실시간으로 수행한다.
 
 \begin{figure*}[t]
 \centering

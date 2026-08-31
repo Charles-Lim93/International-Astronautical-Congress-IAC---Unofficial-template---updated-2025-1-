@@ -8,6 +8,7 @@
 \usepackage{subcaption}
 \usepackage{array}
 \usepackage{microtype}
+\usepackage{placeins}
 \graphicspath{{pics/}{pics/docx/}}
 
 \newcommand{\imageplaceholder}[2][3.1cm]{%
@@ -538,41 +539,20 @@ Three navigation configurations are compared:
 \item INS + wheel odometry, and
 \item INS + wheel odometry + FSS.
 \end{itemize}
-The INS-only case shows unbounded inertial error accumulation. Wheel odometry improves short-range velocity and position, while the FSS bounds heading drift. Figure~\ref{fig:simulation_navigation_results} compares the reference and INS position, attitude, and velocity.
-
-\begin{figure}[t]
-\centering
-\begin{subfigure}[t]{0.98\linewidth}
-  \centering
-  \includegraphics[width=\linewidth]{pics/position.png}
-  \caption{Position components}
-\end{subfigure}
-\par\smallskip
-\begin{subfigure}[t]{0.98\linewidth}
-  \centering
-  \includegraphics[width=\linewidth]{pics/atti.png}
-  \caption{Attitude components}
-\end{subfigure}
-\par\smallskip
-\begin{subfigure}[t]{0.98\linewidth}
-  \centering
-  \includegraphics[width=\linewidth]{pics/vel.png}
-  \caption{Velocity components}
-\end{subfigure}
-\caption{Position, attitude, and velocity tracking of the INS solution against the simulation reference.}
-\label{fig:simulation_navigation_results}
-\end{figure}
-
-\section{Hardware Tests}
-
-A full-scale four-wheel independent-steering rover is used to evaluate real-time implementation and practical applicability. Figure~\ref{fig:hw_architecture} shows the complete hardware organization used in the experiments. The rover carries a Jetson Orin Nano/STM32F7 NAVCOM, an IMU, four wheel encoders, and steering-angle sensors. The STM32F7 collects encoder, steering, and low-level drivetrain data; the Jetson performs time synchronization, four-wheel odometry, and real-time ESKF navigation.
+The INS-only case shows unbounded inertial error accumulation. Wheel odometry improves short-range velocity and position, while the FSS bounds heading drift. Figure~\ref{fig:hw_architecture} shows the sensor inputs and NAVCOM-based navigation-processing flow used for the simulation verification.
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.98\textwidth]{pics/hw_architecture.png}
-\caption{Hardware architecture of the navigation system used in the experiments.}
+\caption{Sensor inputs and NAVCOM-based navigation-processing configuration used for the simulation verification.}
 \label{fig:hw_architecture}
 \end{figure*}
+
+\FloatBarrier
+
+\section{Hardware Tests}
+
+A full-scale four-wheel independent-steering rover is used to evaluate real-time implementation and practical applicability. The rover carries a Jetson Orin Nano/STM32F7 NAVCOM, an IMU, four wheel encoders, and steering-angle sensors. The STM32F7 collects encoder, steering, and low-level drivetrain data; the Jetson performs time synchronization, four-wheel odometry, and real-time ESKF navigation.
 
 \begin{figure*}[t]
 \centering
