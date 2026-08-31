@@ -486,11 +486,6 @@ P&\leftarrow G_{\mathrm{reset}}P^+G_{\mathrm{reset}}^\top,
 \end{equation}
 The corrected nominal state becomes the next linearization point. The quaternion is normalized after each injection, and the bias ordering $[b_a,b_g]$ is kept consistent in the state and covariance~\cite{sola2017quaternion}.
 
-\subsection{Abnormal-State Detection and Recovery Reinitialization}
-\label{sec:recovery_reinitialization}
-
-Pits, obstacles, and wheel--terrain impacts can cause abrupt encoder-speed changes and drive filter-tracking states beyond the normal range. The implementation monitors odometry and filter states, rejects contaminated wheel updates when thresholds are exceeded, and reinitializes the covariance and internal filter information. Updates resume after the measurements and states return to their normal ranges. This fault-recovery action is distinct from the routine injection and zero reset of Eq.~\eqref{eq:29}; system-level failure classification follows FMECA practice~\cite{borgovini1993fmeca}.
-
 \section{Simulation}
 
 The lunar rover environment is implemented using Microsoft AirSim and Unreal Engine. It includes constant lunar gravity, synthetic terrain, four-wheel independent-steering kinematics, and wheel--terrain interaction. IMU, FSS, and encoder sampling, noise, bias, and time synchronization are defined, and the simulated sensor data are supplied to the ESKF. Figure~\ref{fig:lunar_simulation_environment} shows the terrain and rover-driving environment.
@@ -597,9 +592,16 @@ A full-scale four-wheel independent-steering rover is used to evaluate real-time
 \label{fig:hardware}
 \end{figure*}
 
+\subsection{Abnormal-State Detection and Recovery Reinitialization}
+\label{sec:recovery_reinitialization}
+
+During runs on the artificial lunar regolith, pits, obstacles, and transient wheel--terrain impacts can abruptly change wheel contact and drive the encoder-derived velocity observations and filter-tracking states outside their normal operating ranges. The hardware implementation therefore includes a supervisory layer that continuously monitors the wheel-odometry velocity and the corresponding filter states. When a predefined threshold is exceeded, the interval is classified as abnormal and the contaminated wheel-odometry update is temporarily rejected. The error-state mean is returned to zero, while the covariance and internal filter information are restored to their initial operating conditions. Wheel-odometry updates resume after the measurements and estimated states return to the normal range.
+
+This recovery reinitialization is a hardware-test fault-response procedure distinct from the routine error injection and zero reset performed after each measurement update in Eq.~\eqref{eq:29}. Its purpose is to prevent a gross disturbance from propagating into subsequent position and attitude estimates; the system-level classification of failure modes, effects, and mitigation actions follows FMECA practice~\cite{borgovini1993fmeca}.
+
 \subsection{Hardware Experimental Results}
 
-Wheel-contact changes while traversing pits and obstacles produced large disturbances in encoder-based speed and filter-tracking states. During the hardware experiments, the recovery-reinitialization function described in Sec.~\ref{sec:recovery_reinitialization} was therefore activated as a supervisory layer around the ESKF. The function monitors the encoder-derived longitudinal speed and the corresponding filter-tracking state in real time. When the tracking state leaves its predefined normal range, the interval is classified as abnormal and the contaminated wheel-odometry update is temporarily rejected. The error-state mean is then returned to zero, while the covariance and internal filter information are restored to their initial operating conditions. Wheel-odometry updates resume after the measurements and estimated states return to the normal range. This experimental protection differs from the routine error injection and zero reset of Eq.~\eqref{eq:29}; its purpose is to prevent a gross disturbance from propagating into the subsequent position and attitude estimates.
+The recovery-reinitialization function described in Sec.~\ref{sec:recovery_reinitialization} was activated during the hardware runs. The experiment verified that velocity disturbances generated while traversing pits and obstacles were detected as abnormal, the contaminated wheel-odometry updates were rejected, and the filter returned to stable tracking after reinitialization.
 
 Figure~\ref{fig:filter_reinitialization} shows the interval in which pit and wheel--terrain disturbances drive the estimated speed outside the normal range and the subsequent return to stable tracking after reinitialization. The complete time history and the enlarged interval are shown together to compare the estimated velocity before and after recovery.
 
