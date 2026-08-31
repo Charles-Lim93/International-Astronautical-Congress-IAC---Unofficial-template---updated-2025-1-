@@ -45,13 +45,29 @@
 \IACauthoraffiliation{Korea Advanced Institute of Science and Technology (KAIST), Republic of Korea}
 
 \abstract{
-본 연구는 달 표면에서 영상기반 항법의 가용성이 저하되는 구간을 보완하기 위하여
-Fine Sun Sensor(FSS), 관성항법시스템(INS), 4륜 독립조향 휠 오도메트리를 결합한
-오차상태 칼만필터 기반 국부항법 구조를 제안한다. 항법상태는 초기 주행방향에 정렬된
-국부 Cartesian 좌표계에서 전파하며, 단거리·저속 운용범위를 고려하여 일정 중력과
-국부 평면을 가정한다. 제안 알고리즘은 Unreal Engine/AirSim 기반 시뮬레이션과
-실물 크기 로버의 하드웨어 시험을 통해 단계적으로 검증한다.
-}
+Autonomous lunar surface mobility demands high-precision state estimation in the absence of Global
+Navigation Satellite Systems (GNSS). To address this critical guidance, navigation, and control challenge,
+this paper details the development and empirical verification of a robust celestial navigation architecture
+designed specifically for lunar rovers.
+The proposed system fuses an Inertial Navigation System (INS), a Fine Sun Sensor (FSS), and wheel
+odometry. The CMOS-based fine sun sensor captures the three-dimensional Sun vector, which is cross
+referenced with onboard ephemeris data to continuously correct rover heading and attitude. Concurrently,
+wheel odometry is derived from driving motor encoders across a four-wheel independent steering frame
+work. This odometry model explicitly incorporates Ackermann steering dynamics to accurately track
+complex kinematic maneuvers, including zero-turns and wheelbase adaptations.
+The core of the sensor fusion architecture is an Error-State Kalman Filter (ESKF). By estimating
+error states rather than nominal states, and integrating local lunar gravity models, the filter effectively
+bounds long-term inertial drift and ensures superior stability in nonlinear environments.
+The navigation hardware, utilizing a combination of Jetson Orin Nano and STM32 embedded boards,
+underwent a rigorous verification campaign. Initial validation was conducted via Microsoft AirSim and Un
+real Engine, simulating variable solar angles and terrain to confirm filter convergence. Physical Hardware
+in-the-Loop Simulation (HILS) preceded extensive testbed trials. Specifically, autonomous driving and
+suspension control tests were executed in an artificial lunar soil chamber equipped with a helium gravity
+compensation device to evaluate the system’s resilience to high-slip conditions.
+Experimental results demonstrate that the integrated filter successfully derives accurate velocity, posi
+tion, and attitude solutions even during initial slip. Across driving scenarios, the system achieved position
+estimation errors of less than 8% and heading errors below 4%. This multisensor fusion approach provides
+a highly reliable, autonomous navigation framework essential for future lunar surface operations.}
 
 \maketitle
 \thispagestyle{fancy}
