@@ -41,8 +41,8 @@
 \title{Development and Verification of an Error-State Kalman Filter-Based Multisensor Navigation System for Lunar Rovers}
 
 % Author information from the accepted abstract (Paper ID 108402).
-\IACauthor{Chulsoo Lim}{1}{1}
-\IACauthor{Bang Hyochoong}{1}{0}
+\IACauthor{Chulsoo Lim}{1}{0}
+\IACauthor{Bang Hyochoong}{1}{1}
 \IACauthoraffiliation{Korea Advanced Institute of Science and Technology (KAIST), Republic of Korea}
 
 \abstract{
@@ -148,7 +148,7 @@ Proposed system & Non-visual fallback mode & FSS, IMU, wheel encoders & Sun-vect
 
 \subsection{전체 항법 아키텍처}
 
-제안 천문항법 시스템의 센서 융합 개요는 Fig.~\ref{fig:navigation_overview}에 나타내었으며, 세부적인 다중센서 항법 소프트웨어 처리 흐름은 Fig.~\ref{fig:navigation_sw_flow}에 나타내었다. 탑재 IMU의 차체좌표계 각속도와 비력을 입력으로 하는 표준 스트랩다운 INS 기계화는 자세, 속도 및 위치를 고속으로 추측항법한다. 두 개의 보조 채널은 절대정보와 고유수용성 정보를 제공한다. 정밀시계 및 탑재 천체력 조회와 결합된 FSS 채널은 센서좌표계의 3축 태양 시선벡터를 차체좌표계로 변환하고, 예측 태양벡터와 정렬하여 보정 쿼터니언을 생성한다. 이 보정값은 ESKF의 자세 관측값으로 입력된다. 휠 인코더는 4륜 독립조향 기구학 모델을 통해 차체좌표계 속도와 요각속도 관측값을 생성한다. ESKF는 공칭 INS 상태의 선형화 오차를 추적하고 보조측정값으로 장기 드리프트를 보정한다. 이후 추정된 오차를 공칭상태에 주입하고 오차상태를 0으로 초기화한다. 이와 함께 휠 속도 및 필터 추종상태를 감시하는 이상상태 감지·복구 채널을 두어, 구덩이 통과나 휠–지면 충격으로 측정값이 정상범위를 벗어나면 해당 측정 업데이트를 차단하고 공분산과 필터 내부상태의 재초기화를 수행한다.
+제안 천문항법 시스템의 센서 융합 개요는 Fig.~\ref{fig:navigation_overview}에 나타내었다. 탑재 IMU의 차체좌표계 각속도와 비력을 입력으로 하는 표준 스트랩다운 INS 기계화는 자세, 속도 및 위치를 고속으로 추측항법한다. 두 개의 보조 채널은 절대정보와 고유수용성 정보를 제공한다. 정밀시계 및 탑재 천체력 조회와 결합된 FSS 채널은 센서좌표계의 3축 태양 시선벡터를 차체좌표계로 변환하고, 예측 태양벡터와 정렬하여 보정 쿼터니언을 생성한다. 이 보정값은 ESKF의 자세 관측값으로 입력된다. 휠 인코더는 4륜 독립조향 기구학 모델을 통해 차체좌표계 속도와 요각속도 관측값을 생성한다. ESKF는 공칭 INS 상태의 선형화 오차를 추적하고 보조측정값으로 장기 드리프트를 보정한다. 이후 추정된 오차를 공칭상태에 주입하고 오차상태를 0으로 초기화한다. 이와 함께 휠 속도 및 필터 추종상태를 감시하는 이상상태 감지·복구 채널을 두어, 구덩이 통과나 휠–지면 충격으로 측정값이 정상범위를 벗어나면 해당 측정 업데이트를 차단하고 공분산과 필터 내부상태의 재초기화를 수행한다.
 
 \begin{figure*}[t]
 \centering
@@ -157,14 +157,17 @@ Proposed system & Non-visual fallback mode & FSS, IMU, wheel encoders & Sun-vect
 \label{fig:navigation_overview}
 \end{figure*}
 
-\begin{figure*}[t]
+\FloatBarrier
+INS는 IMU 샘플링 주기에 따라 기본적으로 200 Hz로 동작한다. FSS 업데이트는 비동기적으로 처리되며 유효한 태양 영상이 획득될 때마다, 일반적으로 수 Hz로 실행된다. 휠 인코더 채널은 모터제어기 주기로 동작한다. 비동기 입력은 ESKF 측정 업데이트 단계에서 처리되므로 전파 루프를 변경하지 않고 가장 느린 채널의 주기에 맞춰 호출할 수 있다.
+
+이러한 고속 전파와 비동기 측정 업데이트를 포함한 세부 소프트웨어 처리 흐름은 Fig.~\ref{fig:navigation_sw_flow}에 나타내었다.
+
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=0.98\textwidth]{pics/architecture.png}
-\caption{다중센서 항법 소프트웨어의 처리 흐름.}
+\caption{다중센서 항법 소프트웨어의 고속 전파 및 비동기 측정 업데이트 흐름.}
 \label{fig:navigation_sw_flow}
 \end{figure*}
-
-INS는 IMU 샘플링 주기에 따라 기본적으로 200 Hz로 동작한다. FSS 업데이트는 비동기적으로 처리되며 유효한 태양 영상이 획득될 때마다, 일반적으로 수 Hz로 실행된다. 휠 인코더 채널은 모터제어기 주기로 동작한다. 비동기 입력은 ESKF 측정 업데이트 단계에서 처리되므로 전파 루프를 변경하지 않고 가장 느린 채널의 주기에 맞춰 호출할 수 있다.
 
 \subsection{기준좌표계 및 표기법}
 
@@ -340,13 +343,6 @@ $\bar{\mathbf{S}}_{MS}^i(t)$를 탑재시간에서 천체력으로 계산한 MCI
 
 식~\eqref{eq:7}과 식~\eqref{eq:8}은 측정 3축 태양벡터와 비교할 센서좌표계 및 차체좌표계의 예측벡터를 구성한다. Fig.~\ref{fig:ephemeris_variation}은 월내 시각, 일내 시각 및 로버 방위각 변화에 따른 기준 태양벡터의 변화를 나타낸다.
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\textwidth]{pics/ephemeris.png}
-\caption{월내 시각, 일내 시각 및 로버의 360$^\circ$ 방위각 변화에 따른 기준 태양벡터의 변화. 색상은 1월부터 12월까지의 월별 궤적을 나타낸다.}
-\label{fig:ephemeris_variation}
-\end{figure*}
-
 \subsection{3축 태양 시선벡터 측정}
 
 FSS는 센서좌표계에서 정규화된 3성분 태양 시선벡터 $\mathbf S_k^{ss}=[S_x^{ss},S_y^{ss},S_z^{ss}]^\top$를 출력한다. 측정벡터는 고정 장착행렬 $C_{ss}^b$를 이용하여 차체좌표계로 변환하고 다시 단위노름으로 정규화한다.
@@ -362,6 +358,14 @@ FSS는 센서좌표계에서 정규화된 3성분 태양 시선벡터 $\mathbf S
 \end{equation}
 
 측정잡음 $\mathbf e_{ss,k}$는 FSS 각도 정확도 사양을 3축 벡터공분산으로 전파한 영평균 Gaussian 잡음으로 모델링한다. 센서 시야 밖 측정, 광점중심 추출 실패 및 단위노름 허용범위를 벗어난 측정은 자세 업데이트 전에 제거한다.
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=\textwidth]{pics/ephemeris.png}
+\caption{3축 태양 시선벡터 측정에 사용되는 기준 태양벡터의 월내 시각, 일내 시각 및 로버의 360$^\circ$ 방위각 변화. 색상은 1월부터 12월까지의 월별 궤적을 나타낸다.}
+\label{fig:ephemeris_variation}
+\end{figure*}
+\FloatBarrier
 
 \subsection{태양벡터 기반 쿼터니언 자세 보정}
 

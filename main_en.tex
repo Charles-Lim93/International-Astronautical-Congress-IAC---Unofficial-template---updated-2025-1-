@@ -33,8 +33,8 @@
 \title{Development and Verification of an Error-State Kalman Filter-Based Multisensor Navigation System for Lunar Rovers}
 
 % Author information from the accepted abstract (Paper ID 108402).
-\IACauthor{Chulsoo Lim}{1}{1}
-\IACauthor{Bang Hyochoong}{1}{0}
+\IACauthor{Chulsoo Lim}{1}{0}
+\IACauthor{Bang Hyochoong}{1}{1}
 \IACauthoraffiliation{Korea Advanced Institute of Science and Technology (KAIST), Republic of Korea}
 
 \abstract{This study proposes an error-state Kalman filter (ESKF)-based local navigation architecture that integrates a Fine Sun Sensor (FSS), an inertial navigation system (INS), and four-wheel independent-steering odometry to support lunar-surface operation when vision-based navigation is degraded or unavailable. The navigation state is propagated in a local Cartesian frame aligned with the initial direction of travel. Constant gravity and a locally planar surface are assumed for short-range, low-speed operation. The proposed algorithm is verified progressively using an Unreal Engine/AirSim simulation environment and hardware experiments with a full-scale rover.}
@@ -108,7 +108,7 @@ Section 2 presents the navigation architecture and reference frames. Section 3 d
 
 \subsection{Overall Navigation Architecture}
 
-The sensor-fusion concept is shown in Fig.~\ref{fig:navigation_overview}, and the detailed multisensor software flow is shown in Fig.~\ref{fig:navigation_sw_flow}. A strapdown INS propagates attitude, velocity, and position at high rate using IMU angular-rate and specific-force measurements. The FSS channel transforms the measured three-axis Sun line-of-sight vector into the body frame and aligns it with the direction predicted from the onboard clock and ephemeris. The resulting correction quaternion is supplied to the ESKF as an attitude observation. The wheel encoders provide body-frame velocity and yaw-rate observations through the four-wheel kinematic model. The ESKF tracks the linearized errors of the nominal INS state and uses the aiding measurements to correct long-term drift. A monitoring and recovery channel rejects abnormal wheel measurements and reinitializes filter information when disturbances caused by pits or wheel--terrain impacts exceed the normal range.
+The sensor-fusion concept is shown in Fig.~\ref{fig:navigation_overview}. A strapdown INS propagates attitude, velocity, and position at high rate using IMU angular-rate and specific-force measurements. The FSS channel transforms the measured three-axis Sun line-of-sight vector into the body frame and aligns it with the direction predicted from the onboard clock and ephemeris. The resulting correction quaternion is supplied to the ESKF as an attitude observation. The wheel encoders provide body-frame velocity and yaw-rate observations through the four-wheel kinematic model. The ESKF tracks the linearized errors of the nominal INS state and uses the aiding measurements to correct long-term drift. A monitoring and recovery channel rejects abnormal wheel measurements and reinitializes filter information when disturbances caused by pits or wheel--terrain impacts exceed the normal range.
 
 \begin{figure*}[t]
 \centering
@@ -117,14 +117,17 @@ The sensor-fusion concept is shown in Fig.~\ref{fig:navigation_overview}, and th
 \label{fig:navigation_overview}
 \end{figure*}
 
-\begin{figure*}[t]
+\FloatBarrier
+The INS runs at the 200-Hz IMU sampling rate. FSS updates are processed asynchronously whenever a valid Sun image is acquired, typically at several hertz. Wheel encoders are sampled at the motor-controller rate. Each asynchronous measurement invokes the corresponding ESKF update without changing the high-rate propagation loop.
+
+The detailed software flow, including high-rate propagation and asynchronous measurement updates, is shown in Fig.~\ref{fig:navigation_sw_flow}.
+
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=0.98\textwidth]{pics/architecture.png}
-\caption{Multisensor navigation software processing flow.}
+\caption{High-rate propagation and asynchronous measurement-update flow of the multisensor navigation software.}
 \label{fig:navigation_sw_flow}
 \end{figure*}
-
-The INS runs at the 200-Hz IMU sampling rate. FSS updates are processed asynchronously whenever a valid Sun image is acquired, typically at several hertz. Wheel encoders are sampled at the motor-controller rate. Each asynchronous measurement invokes the corresponding ESKF update without changing the high-rate propagation loop.
 
 \subsection{Reference Frames and Notation}
 
@@ -252,13 +255,6 @@ Here, $C_i^m(t)$ is the time-dependent MCI-to-MCMF rotation. Solar parallax due 
 \end{equation}
 Equations~\eqref{eq:7} and~\eqref{eq:8} define the predicted sensor- and body-frame vectors compared with the measured three-axis Sun vector. Figure~\ref{fig:ephemeris_variation} shows the reference-vector variation over month, time of day, and rover heading.
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\textwidth]{pics/ephemeris.png}
-\caption{Reference Sun-vector variation with month, time of day, and a 360$^\circ$ change in rover heading. Colours indicate monthly trajectories from January to December.}
-\label{fig:ephemeris_variation}
-\end{figure*}
-
 \subsection{Three-Axis Sun Line-of-Sight Measurement}
 
 The FSS outputs a normalized three-component Sun line-of-sight vector $\mathbf S_k^{ss}=[S_x^{ss},S_y^{ss},S_z^{ss}]^\top$ in the sensor frame. It is transformed to the body frame using the fixed mounting matrix $C_{ss}^b$ and normalized again:
@@ -272,6 +268,14 @@ The FSS outputs a normalized three-component Sun line-of-sight vector $\mathbf S
 \end{aligned}
 \end{equation}
 The noise $\mathbf e_{ss,k}$ is modeled as zero-mean Gaussian noise whose three-axis covariance is propagated from the FSS angular-accuracy specification. Measurements outside the field of view, failed spot-centroid solutions, and vectors outside the unit-norm tolerance are rejected before the attitude update.
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=\textwidth]{pics/ephemeris.png}
+\caption{Reference-vector variation used for the three-axis Sun line-of-sight measurement over month, time of day, and a 360$^\circ$ change in rover heading. Colours indicate monthly trajectories from January to December.}
+\label{fig:ephemeris_variation}
+\end{figure*}
+\FloatBarrier
 
 \subsection{Sun-Vector Quaternion Attitude Correction}
 
