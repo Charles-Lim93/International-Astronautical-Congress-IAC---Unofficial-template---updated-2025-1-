@@ -18,6 +18,8 @@
 \usepackage{microtype}
 \usepackage{placeins}
 \usepackage{float}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,fit,positioning}
 \graphicspath{{pics/}{pics/docx/}}
 
 \newcommand{\imageplaceholder}[2][3.1cm]{%
@@ -35,16 +37,18 @@
 
 \IACpaperyear{2026}
 \IACpapernumber{IAC-26-C1.5.6.x108402}
-\IAClocation{TBD}
-\IACdate{TBD}
+\IACconference{77th International Astronautical Congress}
+\IAClocation{Antalya, T\"urkiye}
+\IACdate{5--9 October 2026}
 \IACcopyrightA{}
 
 \title{Development and Verification of an Error-State Kalman Filter-Based Multisensor Navigation System for Lunar Rovers}
 
 % Author information from the accepted abstract (Paper ID 108402).
 \IACauthor{Chulsoo Lim}{1}{0}
-\IACauthor{Bang Hyochoong}{1}{1}
-\IACauthoraffiliation{Korea Advanced Institute of Science and Technology (KAIST), Republic of Korea}
+\IACauthor{Hyochoong Bang}{2}{1}
+\IACauthoraffiliation{Department of Aerospace Engineering, Korea Advanced Institute of Science and Technology (KAIST), 291 Daehak-ro, Yuseong-gu, Daejeon 34141, Republic of Korea. \normalfont{E-mail:~\authormail{charleslim@kaist.ac.kr}}}
+\IACauthoraffiliation{Department of Aerospace Engineering, Korea Advanced Institute of Science and Technology (KAIST), 291 Daehak-ro, Yuseong-gu, Daejeon 34141, Republic of Korea. \normalfont{E-mail:~\authormail{hcbang@kaist.ac.kr}}}
 
 \abstract{
 Autonomous lunar surface mobility demands high-precision state estimation in the absence of Global
@@ -73,6 +77,8 @@ a highly reliable, autonomous navigation framework essential for future lunar su
 
 \maketitle
 \thispagestyle{fancy}
+\noindent\textbf{Keywords:} lunar rover navigation; error-state Kalman filter; Fine Sun Sensor; inertial navigation; wheel odometry; multisensor fusion.
+\vspace{1.5ex}
 
 \section*{기호 및 약어}
 \begin{tabular}{@{}ll@{}}
@@ -688,7 +694,7 @@ FSS 시뮬레이션에서는 로버의 위치와 시각에 따른 기준 태양�
 
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=0.98\textwidth]{pics/hw_architecture.png}
+\input{pics/hw_architecture.tex}
 \caption{실물 로버 하드웨어 시험에 사용한 센서 입력 및 NAVCOM 기반 항법처리 구성.}
 \label{fig:hw_architecture}
 \end{figure*}

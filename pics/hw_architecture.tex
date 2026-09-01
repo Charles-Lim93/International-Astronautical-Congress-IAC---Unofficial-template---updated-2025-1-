@@ -1,0 +1,37 @@
+\begingroup
+\tikzset{
+  hwblock/.style={draw=black!70, rounded corners=1.5pt, line width=0.55pt,
+    align=center, font=\sffamily\footnotesize, minimum height=13mm, inner sep=3pt},
+  sensor/.style={hwblock, fill=cyan!10, minimum width=31mm},
+  interface/.style={hwblock, fill=green!10, minimum width=37mm},
+  processor/.style={hwblock, fill=blue!9, minimum width=42mm, minimum height=23mm},
+  controller/.style={hwblock, fill=orange!12, minimum width=27mm, minimum height=23mm},
+  flow/.style={-{Latex[length=2.2mm,width=1.5mm]}, line width=0.65pt, draw=black!75},
+  signal/.style={font=\sffamily\scriptsize, fill=white, inner sep=1.2pt, align=center}
+}
+\resizebox{0.98\textwidth}{!}{%
+\begin{tikzpicture}[node distance=12mm and 14mm]
+  \node[sensor] (fss) {Fine Sun Sensor\\(FSS $\times$ 1)};
+  \node[sensor, below=9mm of fss] (imu) {IMU\\angular rate, specific force};
+
+  \node[interface, right=20mm of fss] (enc) {Wheel encoders ($\times$ 4)\\front left, front right,\\rear left, rear right};
+  \node[interface, below=9mm of enc] (steer) {Steering-angle sensors ($\times$ 4)\\front left, front right,\\rear left, rear right};
+
+  \node[processor, right=22mm of steer, yshift=10mm] (stm) {\textbf{STM32F7}\\sensor acquisition, time stamping,\\and drivetrain interface};
+  \node[processor, right=12mm of stm] (jetson) {\textbf{Jetson Orin Nano}\\time synchronization, odometry,\\ESKF propagation and update};
+  \node[draw=blue!55!black, rounded corners=2pt, line width=0.8pt,
+        fit=(stm)(jetson), inner sep=5mm, label={[font=\sffamily\small\bfseries]above:NAVCOM}] (navcom) {};
+
+  \node[controller, right=17mm of jetson] (rcu) {\textbf{RCU}\\rover control\\and telemetry};
+  \node[controller, right=12mm of rcu] (act) {Drive and\\steering\\actuators};
+
+  \draw[flow] (fss.east) -- ++(8mm,0) |- node[signal, near end] {Sun vector} (jetson.north);
+  \draw[flow] (imu.east) -- ++(8mm,0) |- node[signal, near end] {IMU data} (jetson.south);
+  \draw[flow] (enc.east) -- ++(6mm,0) |- node[signal, near end] {encoder counts} (stm.north);
+  \draw[flow] (steer.east) -- ++(6mm,0) |- node[signal, near end] {steering angles} (stm.south);
+  \draw[flow] (stm.east) -- node[signal] {time-stamped\\wheel data} (jetson.west);
+  \draw[flow] (jetson.east) -- node[signal] {navigation solution\\and system status} (rcu.west);
+  \draw[flow] (rcu.east) -- node[signal] {commands} (act.west);
+\end{tikzpicture}%
+}
+\endgroup

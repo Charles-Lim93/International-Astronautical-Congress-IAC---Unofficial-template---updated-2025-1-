@@ -175,7 +175,7 @@
 \fancyhf{}
 
 % Header
-\chead{\footnotesize International Astronautical Congress, {\iac@location}, {\iac@date}.\\ \iac@makecopyright}
+\chead{\footnotesize \iac@conference, {\iac@location}, {\iac@date}.\\ \iac@makecopyright}
 
 % Footer
 \setlength{\footskip}{40pt}

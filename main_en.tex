@@ -10,6 +10,8 @@
 \usepackage{microtype}
 \usepackage{placeins}
 \usepackage{float}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,fit,positioning}
 \graphicspath{{pics/}{pics/docx/}}
 
 \newcommand{\imageplaceholder}[2][3.1cm]{%
@@ -27,21 +29,25 @@
 
 \IACpaperyear{2026}
 \IACpapernumber{IAC-26-C1.5.6.x108402}
-\IAClocation{TBD}
-\IACdate{TBD}
+\IACconference{77th International Astronautical Congress}
+\IAClocation{Antalya, T\"urkiye}
+\IACdate{5--9 October 2026}
 \IACcopyrightA{}
 
 \title{Development and Verification of an Error-State Kalman Filter-Based Multisensor Navigation System for Lunar Rovers}
 
-% Author information from the accepted abstract (Paper ID 108402).
+% Author and affiliation information for Paper ID 108402.
 \IACauthor{Chulsoo Lim}{1}{0}
-\IACauthor{Bang Hyochoong}{1}{1}
-\IACauthoraffiliation{Korea Advanced Institute of Science and Technology (KAIST), Republic of Korea}
+\IACauthor{Hyochoong Bang}{2}{1}
+\IACauthoraffiliation{Department of Aerospace Engineering, Korea Advanced Institute of Science and Technology (KAIST), 291 Daehak-ro, Yuseong-gu, Daejeon 34141, Republic of Korea. \normalfont{E-mail:~\authormail{charleslim@kaist.ac.kr}}}
+\IACauthoraffiliation{Department of Aerospace Engineering, Korea Advanced Institute of Science and Technology (KAIST), 291 Daehak-ro, Yuseong-gu, Daejeon 34141, Republic of Korea. \normalfont{E-mail:~\authormail{hcbang@kaist.ac.kr}}}
 
-\abstract{This study proposes an error-state Kalman filter (ESKF)-based local navigation architecture that integrates a Fine Sun Sensor (FSS), an inertial navigation system (INS), and four-wheel independent-steering odometry to support lunar-surface operation when vision-based navigation is degraded or unavailable. The navigation state is propagated in a local Cartesian frame aligned with the initial direction of travel. Constant gravity and a locally planar surface are assumed for short-range, low-speed operation. The proposed algorithm is verified progressively using an Unreal Engine/AirSim simulation environment and hardware experiments with a full-scale rover. A helium-buoyancy gravity-compensation device reduces the effective wheel--terrain normal load during the ground tests to approximately one sixth of its terrestrial value.}
+\abstract{This study proposes an error-state Kalman filter (ESKF)-based local navigation architecture that integrates a Fine Sun Sensor (FSS), an inertial navigation system (INS), and four-wheel independent-steering odometry to support lunar-surface operation when vision-based navigation is degraded or unavailable. The navigation state is propagated in a local Cartesian frame aligned with the initial direction of travel. Constant gravity and a locally planar surface are assumed for short-range, low-speed operation. The proposed algorithm is verified progressively using an Unreal Engine/AirSim simulation environment and hardware experiments with a full-scale rover. A helium-buoyancy gravity-compensation device reduces the effective wheel--terrain normal load during the ground tests to approximately one sixth of its terrestrial value. In the reported hardware runs, the maximum absolute horizontal-position errors were 0.36~m in the $x$ direction and 0.12~m in the $y$ direction, and the maximum absolute heading error was 0.57$^\circ$. The results demonstrate the feasibility of the real-time multisensor navigation framework and its recovery procedure for wheel--terrain disturbances.}
 
 \maketitle
 \thispagestyle{fancy}
+\noindent\textbf{Keywords:} lunar rover navigation; error-state Kalman filter; Fine Sun Sensor; inertial navigation; wheel odometry; multisensor fusion.
+\vspace{1.5ex}
 
 \section*{Nomenclature and Abbreviations}
 \begin{tabular}{@{}ll@{}}
@@ -104,7 +110,7 @@ The main contributions are as follows.
 \item Experimental verification of the wheel--inertial subsystem using a full-scale four-wheel independent-steering rover and a helium-buoyancy gravity offloading system. Indoor experiments focus on the IMU, wheel encoders, rover kinematics, and real-time NAVCOM implementation because the solar illumination geometry required for an FSS update cannot be reproduced faithfully indoors.
 \end{enumerate}
 
-Section 2 presents the navigation architecture and reference frames. Section 3 describes the local-frame INS mechanization. Sections 4 and 5 develop the FSS and four-wheel odometry measurement models. Section 6 formulates the ESKF. Sections 7 and 8 present the simulation and hardware tests, followed by the conclusion.
+Section 2 presents the navigation architecture and reference frames. Section 3 describes the local-frame INS mechanization. Sections 4 and 5 develop the FSS and four-wheel-odometry measurement models. Section 6 formulates the ESKF. Section 7 presents the simulation study, Section 8 presents the hardware tests, and Section 9 concludes the paper.
 
 \section{Navigation Architecture and Reference Frames}
 
@@ -553,8 +559,8 @@ The estimated roll, pitch, and yaw generally follow the reference attitude varia
 
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=0.98\textwidth]{pics/hw_architecture.png}
-\caption{Sensor inputs and NAVCOM-based navigation-processing hardware configuration of the full-scale rover.}
+\input{pics/hw_architecture.tex}
+\caption{Sensor interfaces and NAVCOM-based navigation hardware architecture of the full-scale rover. The platform uses one FSS and four drive-encoder and steering-angle channels, one for each wheel.}
 \label{fig:hw_architecture}
 \end{figure*}
 
