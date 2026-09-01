@@ -522,11 +522,7 @@ In the FSS simulation, the reference Sun vector is computed from rover position 
 
 \subsection{Simulation Results}
 
-Only the following two navigation configurations are compared:
-\begin{itemize}[leftmargin=*]
-\item INS only,
-\item INS + wheel odometry + FSS.
-\end{itemize}
+Only two navigation configurations are compared: (i) INS only and (ii) INS + wheel odometry + FSS.
 The same reference trajectory, initial conditions, and rover commands are applied in both cases. The INS-only case provides the baseline for observing the accumulation of attitude, velocity, and position errors caused by IMU integration. In the integrated case, wheel-odometry velocity observations and the FSS Sun-vector quaternion correction are processed asynchronously while the same nominal INS state is propagated. No separate INS + wheel-odometry-only scenario was simulated. Repeated executions of the identically defined scenarios were used to check implementation repeatability, and the paper presents one representative time history. Ensemble statistics based on the number of repetitions are outside the scope of this study; therefore, the results are not interpreted as a Monte Carlo performance assessment.
 
 Figure~\ref{fig:simulation_navigation_results} presents the attitude, velocity, and position tracking results for the integrated case. The ``INS Result'' label embedded in the plots denotes the nominal INS navigation state after ESKF measurement updates and error injection; it does not denote the unaided INS-only scenario. The INS-only run is used as the unaided comparison baseline.
