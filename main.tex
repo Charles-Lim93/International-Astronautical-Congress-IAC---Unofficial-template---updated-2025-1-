@@ -665,12 +665,6 @@ FSS 시뮬레이션에서는 로버의 위치와 시각에 따른 기준 태양�
 
 두 경우에는 동일한 기준궤적, 초기조건 및 로버 주행명령을 적용하였다. INS-only 경우는 IMU 적분에 의한 자세, 속도 및 위치오차의 누적을 확인하기 위한 기준선으로 사용하였다. 결합항법 경우에는 동일한 공칭 INS 전파에 휠 오도메트리 속도 관측과 FSS 태양벡터 기반 쿼터니언 자세보정을 비동기적으로 적용하였다. 별도의 INS + wheel odometry 단독 시나리오는 수행하지 않았다. 시뮬레이션에서 사용한 센서 입력과 NAVCOM 기반 항법처리 흐름은 Fig.~\ref{fig:hw_architecture}에 나타내었다.
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.98\textwidth]{pics/hw_architecture.png}
-\caption{시뮬레이션 검증에 사용한 센서 입력 및 NAVCOM 기반 항법처리 구성.}
-\label{fig:hw_architecture}
-\end{figure*}
 
 결합항법 경우의 자세, 속도 및 위치 추종결과를 Fig.~\ref{fig:simulation_navigation_results}에 나타내었다. 그림 내부의 ``INS Result''는 순수 INS-only 시나리오가 아니라, ESKF 보정값이 주입되는 공칭 INS 항법상태를 의미한다. INS-only 시나리오는 보조측정이 없는 비교 기준선으로 사용하였다.
 
@@ -706,6 +700,13 @@ FSS 시뮬레이션에서는 로버의 위치와 시각에 따른 기준 태양�
 제안 알고리즘의 실시간 구현과 실제 로버 적용 가능성을 평가하기 위하여 실물 크기 4륜 독립조향 로버를 이용한다. 로버에는 Jetson Orin Nano와 STM32F7 기반 NAVCOM, IMU, 4개의 휠 엔코더 및 조향각 측정장치를 탑재한다.
 
 STM32F7은 엔코더, 조향장치 및 저수준 구동계 데이터를 수집하고, Jetson Orin Nano는 센서 시간동기, 4륜 오도메트리 계산과 ESKF 항법을 실시간으로 수행한다.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.98\textwidth]{pics/hw_architecture.png}
+\caption{시뮬레이션 검증에 사용한 센서 입력 및 NAVCOM 기반 항법처리 구성.}
+\label{fig:hw_architecture}
+\end{figure*}
 
 
 \subsection{이상상태 감지 및 복구 재초기화}
