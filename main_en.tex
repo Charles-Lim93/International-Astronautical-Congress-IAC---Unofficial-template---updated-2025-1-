@@ -62,7 +62,10 @@ The INS is a core element of a lunar-rover navigation architecture because it pr
 
 Previous Mars and lunar rovers have addressed this limitation using several aiding sensors. The Mars Exploration Rovers, Mars Science Laboratory, and Perseverance rely strongly on visual odometry (VO) and stereo terrain-relative navigation. The Chang'e/Yutu rovers combine inertial measurements with Sun observations and image-based methods. These missions demonstrate the maturity of vision-based navigation for planetary surface vehicles.
 
-\begin{table*}[t]
+The performance and availability of VO depend on scene texture and illumination. Low-texture regolith, long shadows at low solar elevation, high contrast, temporary camera degradation, and limited onboard computing resources can reduce feature-detection and matching reliability. A navigation aid independent of terrain imagery is therefore valuable as a complementary channel that improves system availability and fault tolerance.
+
+\FloatBarrier
+\begin{table*}[!t]
 \centering
 \caption{Representative navigation approaches used by planetary surface vehicles.}
 \label{tab:rover_navigation}
@@ -84,8 +87,6 @@ Proposed system & Non-visual fallback mode & FSS, IMU, wheel encoders & Sun-vect
 \bottomrule
 \end{tabularx}
 \end{table*}
-
-The performance and availability of VO depend on scene texture and illumination. Low-texture regolith, long shadows at low solar elevation, high contrast, temporary camera degradation, and limited onboard computing resources can reduce feature-detection and matching reliability. A navigation aid independent of terrain imagery is therefore valuable as a complementary channel that improves system availability and fault tolerance.
 
 Sun-vector-based celestial navigation has been studied as such an aid. Comparing a measured solar line-of-sight vector with the direction predicted from an onboard ephemeris and clock provides bounded absolute heading and inclination information~\cite{ilyas2016integrated,rhee2007satellite}. A Sun sensor is mechanically simple, radiation tolerant, and largely independent of terrain conditions, making it suitable for long-duration lunar operation.
 
@@ -111,14 +112,13 @@ Section 2 presents the navigation architecture and reference frames. Section 3 d
 
 The sensor-fusion concept is shown in Fig.~\ref{fig:navigation_overview}. A strapdown INS propagates attitude, velocity, and position at high rate using IMU angular-rate and specific-force measurements. The FSS channel transforms the measured three-axis Sun line-of-sight vector into the body frame and aligns it with the direction predicted from the onboard clock and ephemeris. The resulting correction quaternion is supplied to the ESKF as an attitude observation. The wheel encoders provide body-frame velocity and yaw-rate observations through the four-wheel kinematic model. The ESKF tracks the linearized errors of the nominal INS state and uses the aiding measurements to correct long-term drift. A monitoring and recovery channel rejects abnormal wheel measurements and reinitializes filter information when disturbances caused by pits or wheel--terrain impacts exceed the normal range.
 
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=0.96\textwidth]{pics/overview.png}
 \caption{Overview of the ESKF-based navigation system integrating the FSS, IMU, and wheel odometry.}
 \label{fig:navigation_overview}
 \end{figure*}
 
-\FloatBarrier
 The INS runs at the 200-Hz IMU sampling rate. FSS updates are processed asynchronously whenever a valid Sun image is acquired, typically at several hertz. Wheel encoders are sampled at the motor-controller rate. Each asynchronous measurement invokes the corresponding ESKF update without changing the high-rate propagation loop.
 
 The detailed software flow, including high-rate propagation and asynchronous measurement updates, is shown in Fig.~\ref{fig:navigation_sw_flow}.
