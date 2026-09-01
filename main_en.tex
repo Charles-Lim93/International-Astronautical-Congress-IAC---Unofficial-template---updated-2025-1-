@@ -538,28 +538,28 @@ Figure~\ref{fig:simulation_navigation_results} presents the attitude, velocity, 
 
 The estimated roll, pitch, and yaw generally follow the reference attitude variations. The correction quaternion formed from the measured three-axis Sun vector and the ephemeris-based reference vector is supplied to the ESKF attitude update, thereby limiting long-term inertial attitude-error accumulation. The wheel-odometry observation constrains planar speed and maintains tracking of the $x$- and $y$-velocity components. Short transient differences appear in the vertical component during abrupt terrain changes, after which the estimate returns toward the reference. The horizontal position components also closely follow the reference trajectory, whereas the vertical position exhibits comparatively larger transient errors because it depends on terrain-height variation and integrated vertical acceleration.
 
-\begin{figure*}[p]
+\begin{figure}[t]
 \centering
-\begin{subfigure}[t]{0.70\textwidth}
+\begin{subfigure}[t]{0.98\linewidth}
   \centering
   \includegraphics[width=\linewidth]{pics/atti.png}
   \caption{Roll, pitch, and yaw attitude components}
 \end{subfigure}
 \par\medskip
-\begin{subfigure}[t]{0.70\textwidth}
+\begin{subfigure}[t]{0.98\linewidth}
   \centering
   \includegraphics[width=\linewidth]{pics/vel.png}
   \caption{Three-axis velocity components}
 \end{subfigure}
 \par\medskip
-\begin{subfigure}[t]{0.70\textwidth}
+\begin{subfigure}[t]{0.98\linewidth}
   \centering
   \includegraphics[width=\linewidth]{pics/position.png}
   \caption{Three-axis position components}
 \end{subfigure}
 \caption{Reference and corrected nominal-INS attitude, velocity, and position histories for the INS + wheel odometry + FSS simulation. ``INS Result'' in the embedded plot legends denotes the navigation state after ESKF measurement updates and error injection.}
 \label{fig:simulation_navigation_results}
-\end{figure*}
+\end{figure}
 
 \FloatBarrier
 

@@ -669,21 +669,21 @@ FSS 시뮬레이션에서는 로버의 위치와 시각에 따른 기준 태양�
 
 자세결과에서는 roll, pitch 및 yaw 추정값이 기준 자세의 변화와 전반적으로 일치한다. 특히 FSS에서 측정한 3축 태양벡터와 천체력 기준벡터로 구성한 보정 쿼터니언이 ESKF 자세 업데이트에 입력되어 관성 자세오차의 장기 누적을 제한한다. 속도결과에서는 휠 오도메트리 관측이 평면 주행속도를 구속하여 $x$ 및 $y$ 방향 속도 추종성을 유지하며, 수직방향의 급격한 지형변화 구간에서는 일시적인 차이가 나타난 뒤 다시 기준값으로 수렴한다. 위치결과에서도 수평 위치는 기준궤적을 근접하게 추종하고, $z$ 방향은 지형 고도변화와 수직가속도 적분의 영향으로 수평성분보다 상대적으로 큰 과도오차를 보인다.
 
-\begin{figure*}[p]
+\begin{figure}[t]
 \centering
-\begin{subfigure}[t]{0.70\textwidth}
+\begin{subfigure}[t]{0.98\linewidth}
   \centering
   \includegraphics[width=\linewidth]{pics/atti.png}
   \caption{Roll, pitch, and yaw attitude components}
 \end{subfigure}
 \par\medskip
-\begin{subfigure}[t]{0.70\textwidth}
+\begin{subfigure}[t]{0.98\linewidth}
   \centering
   \includegraphics[width=\linewidth]{pics/vel.png}
   \caption{Three-axis velocity components}
 \end{subfigure}
 \par\medskip
-\begin{subfigure}[t]{0.70\textwidth}
+\begin{subfigure}[t]{0.98\linewidth}
   \centering
   \includegraphics[width=\linewidth]{pics/position.png}
   \caption{Three-axis position components}
@@ -705,7 +705,7 @@ STM32F7은 엔코더, 조향장치 및 저수준 구동계 데이터를 수집�
 \includegraphics[width=0.98\textwidth]{pics/hw_architecture.png}
 \caption{시뮬레이션 검증에 사용한 센서 입력 및 NAVCOM 기반 항법처리 구성.}
 \label{fig:hw_architecture}
-\end{figure*}
+\end{figure}
 \FloatBarrier
 
 
