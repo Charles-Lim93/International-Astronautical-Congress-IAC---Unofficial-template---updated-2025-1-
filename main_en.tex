@@ -526,12 +526,13 @@ Only the following two navigation configurations are compared:
 \end{itemize}
 The same reference trajectory, initial conditions, and rover commands are applied in both cases. The INS-only case provides the baseline for observing the accumulation of attitude, velocity, and position errors caused by IMU integration. In the integrated case, wheel-odometry velocity observations and the FSS Sun-vector quaternion correction are processed asynchronously while the same nominal INS state is propagated. No separate INS + wheel-odometry-only scenario was simulated. Figure~\ref{fig:hw_architecture} shows the sensor inputs and NAVCOM-based navigation-processing flow used for the simulation verification.
 
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=0.98\textwidth]{pics/hw_architecture.png}
 \caption{Sensor inputs and NAVCOM-based navigation-processing configuration used for the simulation verification.}
 \label{fig:hw_architecture}
 \end{figure*}
+\FloatBarrier
 
 Figure~\ref{fig:simulation_navigation_results} presents the attitude, velocity, and position tracking results for the integrated case. The ``INS Result'' label embedded in the plots denotes the nominal INS navigation state after ESKF measurement updates and error injection; it does not denote the unaided INS-only scenario. The INS-only run is used as the unaided comparison baseline.
 
@@ -643,6 +644,7 @@ Atti \#3 &  -2.00 &  -1.80 & After move \\
 \end{tabularx}
 \end{table}
 
+\FloatBarrier
 \section{Conclusion}
 
 This study developed an ESKF-based local navigation system that integrates an INS, a Fine Sun Sensor (FSS), and four-wheel independent-steering odometry for lunar rovers operating without GNSS and under conditions in which vision-based navigation may become unreliable. The nominal INS state is propagated at high rate in a local Cartesian frame under constant-gravity and locally planar assumptions appropriate for short-range, low-speed operation. Asynchronous aiding measurements are then used to bound accumulated errors. The measured three-axis Sun line-of-sight vector is aligned with the ephemeris-based reference vector to form a minimum-rotation correction quaternion, whose minimal-coordinate residual is used as the ESKF attitude observation. The odometry model explicitly represents the four independently steered wheels and therefore supplies velocity and yaw-rate observations during conventional Ackermann motion, zero turns, and wheelbase-adjustment maneuvers.
