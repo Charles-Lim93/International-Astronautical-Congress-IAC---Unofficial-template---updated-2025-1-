@@ -518,19 +518,45 @@ In the FSS simulation, the reference Sun vector is computed from rover position 
 
 \subsection{Simulation Results}
 
-Three navigation configurations are compared:
+Only the following two navigation configurations are compared:
 \begin{itemize}[leftmargin=*]
 \item INS only,
-\item INS + wheel odometry, and
 \item INS + wheel odometry + FSS.
 \end{itemize}
-The INS-only case shows unbounded inertial error accumulation. Wheel odometry improves short-range velocity and position, while the FSS quaternion update bounds attitude drift in the Sun-vector-observable subspace. Figure~\ref{fig:hw_architecture} shows the sensor inputs and NAVCOM-based navigation-processing flow used for the simulation verification.
+The same reference trajectory, initial conditions, and rover commands are applied in both cases. The INS-only case provides the baseline for observing the accumulation of attitude, velocity, and position errors caused by IMU integration. In the integrated case, wheel-odometry velocity observations and the FSS Sun-vector quaternion correction are processed asynchronously while the same nominal INS state is propagated. No separate INS + wheel-odometry-only scenario was simulated. Figure~\ref{fig:hw_architecture} shows the sensor inputs and NAVCOM-based navigation-processing flow used for the simulation verification.
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.98\textwidth]{pics/hw_architecture.png}
 \caption{Sensor inputs and NAVCOM-based navigation-processing configuration used for the simulation verification.}
 \label{fig:hw_architecture}
+\end{figure*}
+
+Figure~\ref{fig:simulation_navigation_results} presents the attitude, velocity, and position tracking results for the integrated case. The ``INS Result'' label embedded in the plots denotes the nominal INS navigation state after ESKF measurement updates and error injection; it does not denote the unaided INS-only scenario. The INS-only run is used as the unaided comparison baseline.
+
+The estimated roll, pitch, and yaw generally follow the reference attitude variations. The correction quaternion formed from the measured three-axis Sun vector and the ephemeris-based reference vector is supplied to the ESKF attitude update, thereby limiting long-term inertial attitude-error accumulation. The wheel-odometry observation constrains planar speed and maintains tracking of the $x$- and $y$-velocity components. Short transient differences appear in the vertical component during abrupt terrain changes, after which the estimate returns toward the reference. The horizontal position components also closely follow the reference trajectory, whereas the vertical position exhibits comparatively larger transient errors because it depends on terrain-height variation and integrated vertical acceleration.
+
+\begin{figure*}[p]
+\centering
+\begin{subfigure}[t]{0.70\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{pics/atti.png}
+  \caption{Roll, pitch, and yaw attitude components}
+\end{subfigure}
+\par\medskip
+\begin{subfigure}[t]{0.70\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{pics/vel.png}
+  \caption{Three-axis velocity components}
+\end{subfigure}
+\par\medskip
+\begin{subfigure}[t]{0.70\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{pics/position.png}
+  \caption{Three-axis position components}
+\end{subfigure}
+\caption{Reference and corrected nominal-INS attitude, velocity, and position histories for the INS + wheel odometry + FSS simulation. ``INS Result'' in the embedded plot legends denotes the navigation state after ESKF measurement updates and error injection.}
+\label{fig:simulation_navigation_results}
 \end{figure*}
 
 \FloatBarrier

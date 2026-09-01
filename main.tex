@@ -652,25 +652,50 @@ FSS 시뮬레이션에서는 로버의 위치와 시각에 따른 기준 태양�
 
 \subsection{시뮬레이션 결과}
 
-각 센서의 기여도를 구분하기 위하여 다음의 세 가지 항법 구성을 비교한다.
+센서 융합에 따른 항법성능 변화를 확인하기 위하여 다음의 두 가지 항법 구성만을 비교하였다.
 
 \begin{itemize}[leftmargin=*]
 
 \item INS only
 
-\item INS + wheel odometry
-
 \item INS + wheel odometry + FSS
 
 \end{itemize}
 
-INS-only 결과는 관성항법의 기본적인 오차 누적특성을 나타낸다. 휠 오도메트리를 추가한 결과를 통해 속도 및 단거리 위치추정 개선효과를 평가하며, FSS를 추가한 결과를 통해 쿼터니언 자세 보정과 자세 드리프트 제한효과를 분석한다. 시뮬레이션에서 사용한 센서 입력과 NAVCOM 기반 항법처리 흐름은 Fig.~\ref{fig:hw_architecture}에 나타내었다.
+두 경우에는 동일한 기준궤적, 초기조건 및 로버 주행명령을 적용하였다. INS-only 경우는 IMU 적분에 의한 자세, 속도 및 위치오차의 누적을 확인하기 위한 기준선으로 사용하였다. 결합항법 경우에는 동일한 공칭 INS 전파에 휠 오도메트리 속도 관측과 FSS 태양벡터 기반 쿼터니언 자세보정을 비동기적으로 적용하였다. 별도의 INS + wheel odometry 단독 시나리오는 수행하지 않았다. 시뮬레이션에서 사용한 센서 입력과 NAVCOM 기반 항법처리 흐름은 Fig.~\ref{fig:hw_architecture}에 나타내었다.
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.98\textwidth]{pics/hw_architecture.png}
 \caption{시뮬레이션 검증에 사용한 센서 입력 및 NAVCOM 기반 항법처리 구성.}
 \label{fig:hw_architecture}
+\end{figure*}
+
+결합항법 경우의 자세, 속도 및 위치 추종결과를 Fig.~\ref{fig:simulation_navigation_results}에 나타내었다. 그림 내부의 ``INS Result''는 순수 INS-only 시나리오가 아니라, ESKF 보정값이 주입되는 공칭 INS 항법상태를 의미한다. INS-only 시나리오는 보조측정이 없는 비교 기준선으로 사용하였다.
+
+자세결과에서는 roll, pitch 및 yaw 추정값이 기준 자세의 변화와 전반적으로 일치한다. 특히 FSS에서 측정한 3축 태양벡터와 천체력 기준벡터로 구성한 보정 쿼터니언이 ESKF 자세 업데이트에 입력되어 관성 자세오차의 장기 누적을 제한한다. 속도결과에서는 휠 오도메트리 관측이 평면 주행속도를 구속하여 $x$ 및 $y$ 방향 속도 추종성을 유지하며, 수직방향의 급격한 지형변화 구간에서는 일시적인 차이가 나타난 뒤 다시 기준값으로 수렴한다. 위치결과에서도 수평 위치는 기준궤적을 근접하게 추종하고, $z$ 방향은 지형 고도변화와 수직가속도 적분의 영향으로 수평성분보다 상대적으로 큰 과도오차를 보인다.
+
+\begin{figure*}[p]
+\centering
+\begin{subfigure}[t]{0.70\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{pics/atti.png}
+  \caption{Roll, pitch, and yaw attitude components}
+\end{subfigure}
+\par\medskip
+\begin{subfigure}[t]{0.70\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{pics/vel.png}
+  \caption{Three-axis velocity components}
+\end{subfigure}
+\par\medskip
+\begin{subfigure}[t]{0.70\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{pics/position.png}
+  \caption{Three-axis position components}
+\end{subfigure}
+\caption{INS + wheel odometry + FSS 결합항법 시뮬레이션의 기준값과 보정된 공칭 INS 자세, 속도 및 위치 추종결과. 그림 범례의 ``INS Result''는 ESKF 측정 업데이트와 오차주입이 반영된 항법상태를 의미한다.}
+\label{fig:simulation_navigation_results}
 \end{figure*}
 
 \FloatBarrier
