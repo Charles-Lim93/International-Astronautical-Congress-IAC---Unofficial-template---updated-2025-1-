@@ -45,7 +45,7 @@
 %-----------------------------------------------------
 %% ------------ APPEARANCE ---------------------------
 % Document setup
-\RequirePackage[margin=2.25cm,top=3.35cm,bottom=3.35cm,headheight=\baselineskip]{geometry} % page layout
+\RequirePackage[margin=2.25cm,top=3.35cm,bottom=3.35cm,headheight=18pt]{geometry} % page layout
 \setlength{\columnsep}{0.8cm} % column spacing
 % Times-compatible text with the original IAC/newtx math appearance.
 \RequirePackage{iftex}
