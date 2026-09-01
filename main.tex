@@ -159,7 +159,7 @@ Proposed system & Non-visual fallback mode & FSS, IMU, wheel encoders & Heading-
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.98\textwidth]{pics/navigation_sw_architecture.png}
+\includegraphics[width=0.98\textwidth]{pics/architecture.png}
 \caption{다중센서 항법 소프트웨어의 처리 흐름.}
 \label{fig:navigation_sw_flow}
 \end{figure*}
@@ -319,7 +319,6 @@ a_k^\ell=C_{b,k}^\ell(f_{m,k}^b-b_{a,k})+g^\ell
 
 두 가지 특성으로 인해 FSS는 달에서 INS를 보조하는 센서로 특히 적합하다. 첫째, 측정값이 본질적으로 비발산한다. 태양방향은 기하학적으로 결정되며 로버의 이전 이동이력에 영향을 받지 않는다. 둘째, FSS는 시각 오도메트리 성능을 저하시키는 지형영향(먼지, 월면토 교란, 낮은 고도의 그림자)에 거의 영향을 받지 않으며, 태양이 센서 시야각 안에 존재해야 한다는 운용조건만 요구한다.
 
-\placeholderfigure{FSS 동작원리와 태양영상 예시.}{FSS 개념도·센서 사진·태양영상 삽입 예정}
 
 \subsection{천체력 기준 태양벡터}
 
@@ -643,32 +642,6 @@ Microsoft AirSim과 Unreal Engine을 이용하여 달 표면 로버 주행환경
 
 FSS 시뮬레이션에서는 로버의 위치와 시각에 따른 기준 태양벡터를 천체력으로부터 계산하고, MCI--MCMF 변환과 착륙지 기준의 고정 국부좌표계 변환을 거쳐 센서좌표계의 태양 시선벡터를 생성한다. 이 측정값에는 실제 FSS 성능을 고려한 각도잡음과 바이어스를 추가한다.
 
-\begin{figure*}[t]
-\centering
-\begin{subfigure}[t]{0.235\textwidth}
-  % \includegraphics[width=\linewidth]{pics/simulation_0900.png}
-  \imageplaceholder[3.2cm]{09:00 시뮬레이션 이미지}
-  \caption{Solar time 09:00}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.235\textwidth}
-  % \includegraphics[width=\linewidth]{pics/simulation_1300.png}
-  \imageplaceholder[3.2cm]{13:00 시뮬레이션 이미지}
-  \caption{Solar time 13:00}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.235\textwidth}
-  % \includegraphics[width=\linewidth]{pics/simulation_1700.png}
-  \imageplaceholder[3.2cm]{17:00 시뮬레이션 이미지}
-  \caption{Solar time 17:00}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.235\textwidth}
-  % \includegraphics[width=\linewidth]{pics/simulation_1730.png}
-  \imageplaceholder[3.2cm]{17:30 시뮬레이션 이미지}
-  \caption{Solar time 17:30}
-\end{subfigure}
-\caption{Unreal Engine/AirSim 환경에서 태양시각에 따라 생성한 조명조건.}
-\label{fig:simulation_sun}
-\end{figure*}
-
 \subsection{시뮬레이션 결과}
 
 각 센서의 기여도를 구분하기 위하여 다음의 세 가지 항법 구성을 비교한다.
@@ -700,26 +673,6 @@ INS-only 결과는 관성항법의 기본적인 오차 누적특성을 나타낸
 
 STM32F7은 엔코더, 조향장치 및 저수준 구동계 데이터를 수집하고, Jetson Orin Nano는 센서 시간동기, 4륜 오도메트리 계산과 ESKF 항법을 실시간으로 수행한다.
 
-\begin{figure*}[t]
-\centering
-\begin{subfigure}[t]{0.31\textwidth}
-  % \includegraphics[width=\linewidth]{pics/rover_electronics.jpg}
-  \imageplaceholder[3.6cm]{로버 내부 전장 사진}
-  \caption{로버 내부 전장 통합}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.31\textwidth}
-  % \includegraphics[width=\linewidth]{pics/navcom_hardware.jpg}
-  \imageplaceholder[3.6cm]{NAVCOM 하드웨어 사진}
-  \caption{NAVCOM 하드웨어}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.34\textwidth}
-  % \includegraphics[width=\linewidth]{pics/navcom_dataflow.pdf}
-  \imageplaceholder[3.6cm]{NAVCOM 데이터 흐름 그림}
-  \caption{NAVCOM 데이터 흐름}
-\end{subfigure}
-\caption{실물 크기 로버의 항법컴퓨터 및 센서 인터페이스 구성.}
-\label{fig:hardware}
-\end{figure*}
 
 \subsection{이상상태 감지 및 복구 재초기화}
 \label{sec:recovery_reinitialization}

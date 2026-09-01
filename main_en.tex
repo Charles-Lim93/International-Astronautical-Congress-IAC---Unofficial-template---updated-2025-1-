@@ -119,7 +119,7 @@ The sensor-fusion concept is shown in Fig.~\ref{fig:navigation_overview}, and th
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.98\textwidth]{pics/navigation_sw_architecture.png}
+\includegraphics[width=0.98\textwidth]{pics/architecture.png}
 \caption{Multisensor navigation software processing flow.}
 \label{fig:navigation_sw_flow}
 \end{figure*}
@@ -508,28 +508,6 @@ The lunar rover environment is implemented using Microsoft AirSim and Unreal Eng
 \end{figure*}
 
 In the FSS simulation, the reference Sun vector is computed from rover position and time, transformed through MCI--MCMF and the fixed landing-site local frame, and expressed in the sensor frame. Angular noise and bias representative of the FSS are added.
-
-\begin{figure*}[t]
-\centering
-\begin{subfigure}[t]{0.235\textwidth}
-  \imageplaceholder[3.2cm]{09:00 simulation image}
-  \caption{Solar time 09:00}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.235\textwidth}
-  \imageplaceholder[3.2cm]{13:00 simulation image}
-  \caption{Solar time 13:00}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.235\textwidth}
-  \imageplaceholder[3.2cm]{17:00 simulation image}
-  \caption{Solar time 17:00}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.235\textwidth}
-  \imageplaceholder[3.2cm]{17:30 simulation image}
-  \caption{Solar time 17:30}
-\end{subfigure}
-\caption{Illumination conditions generated in Unreal Engine/AirSim at different solar times.}
-\label{fig:simulation_sun}
-\end{figure*}
 
 \subsection{Simulation Results}
 
