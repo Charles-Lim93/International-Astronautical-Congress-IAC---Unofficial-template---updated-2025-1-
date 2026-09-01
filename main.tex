@@ -115,7 +115,7 @@ Chandrayaan-3 / Pragyan & Semi-autonomous & Stereo Navcams, mobility telemetry &
 SLIM / LEV-2 & Fully autonomous, short-range & Dual cameras, motion sensors & Autonomous mobility and imaging \\
 IM-2 / YAOKI* & Teleoperated & Camera, mobility telemetry & Imaging only; no surface traverse \\
 Rashid-1 / Rashid-2** & Ground-in-the-loop & Wide-field cameras, mobility sensors & Vision-assisted surface operation \\
-Proposed system & Non-visual fallback mode & FSS, IMU, wheel encoders & Heading-bounded local dead reckoning \\
+Proposed system & Non-visual fallback mode & FSS, IMU, wheel encoders & Sun-vector attitude-aided local dead reckoning \\
 \bottomrule
 \end{tabularx}
 \end{table*}
@@ -126,7 +126,7 @@ Proposed system & Non-visual fallback mode & FSS, IMU, wheel encoders & Heading-
 
 융합 측면에서 ESKF는 관성, 천체 및 오도메트리 측정값을 결합하는 대표적인 프레임워크이다~\cite{lefferts1982kalman,sola2017quaternion,sveinsson2012insgps,groves2013principles}. ESKF는 비선형으로 전파되는 공칭상태 주위에서 작은 선형화 오차상태를 추적함으로써 쿼터니언 단위노름 제약을 일관되게 다루고, 자세오차와 IMU 바이어스를 최소좌표로 추정할 수 있다. 이러한 오차상태 구성은 절대 보정정보가 간헐적으로 제공되는 달 로버 항법에 적합하다.
 
-본 연구는 달 로버 운용에 특화된 ESKF 기반 다중센서 항법시스템을 완전한 하드웨어 수준에서 구현하고 검증하는 것을 목표로 한다. 본 연구의 목적은 제안하는 INS/FSS/휠 오도메트리 결합항법이 태양이 센서의 시야 내에 존재하는 조건에서 VO 업데이트가 일시적으로 불가능하거나 신뢰하기 어려운 상황을 가정하여, FSS에서 측정한 태양벡터가 INS의 방위각 드리프트를 제한하고 휠 오도메트리가 단거리 국부 위치추정의 연속성을 유지할 수 있는지를 검증한다.
+본 연구는 달 로버 운용에 특화된 ESKF 기반 다중센서 항법시스템을 완전한 하드웨어 수준에서 구현하고 검증하는 것을 목표로 한다. 본 연구의 목적은 제안하는 INS/FSS/휠 오도메트리 결합항법이 태양이 센서의 시야 내에 존재하는 조건에서 VO 업데이트가 일시적으로 불가능하거나 신뢰하기 어려운 상황을 가정하여, FSS에서 측정한 3축 태양벡터로 구성한 쿼터니언 자세 보정값이 INS 자세 드리프트를 제한하고 휠 오도메트리가 단거리 국부 위치추정의 연속성을 유지할 수 있는지를 검증한다.
 
 제안 아키텍처는 INS, CMOS 기반 FSS, 4륜 독립조향 구동계에서 얻은 휠 오도메트리를 국부 평면 및 일정 중력 가정에서 동작하는 하나의 오차상태 필터로 융합한다.
 
@@ -134,7 +134,7 @@ Proposed system & Non-visual fallback mode & FSS, IMU, wheel encoders & Heading-
 
 \begin{enumerate}[label=(\roman*)]
 
-\item FSS/INS/4륜 오도메트리 기반 달 로버 국부항법시스템의 제안. 달 표면에서 VO 업데이트가 제한되는 구간의 항법 연속성 확보를 목적으로, INS, Fine Sun Sensor(FSS) 및 4륜 독립조향 오도메트리를 단일 ESKF로 결합한 비영상 국부항법 구조를 제안한다. 제안 시스템은 천체력 기반 태양벡터를 이용하여 INS의 방위각 드리프트를 제한하고, 휠 오도메트리를 이용하여 로버의 단거리 속도와 변위를 추정한다. 이 과정에서 천체력 기준 태양벡터의 국부좌표계 변환과 시선벡터 측정모델을 일관된 필터 구조로 정식화하였다. 또한 Ackermann 주행뿐 아니라 제로턴과 독립조향 상태를 처리할 수 있도록 4륜 독립조향 로버의 운동학적 오도메트리 모델을 구성하였다.
+\item FSS/INS/4륜 오도메트리 기반 달 로버 국부항법시스템의 제안. 달 표면에서 VO 업데이트가 제한되는 구간의 항법 연속성 확보를 목적으로, INS, Fine Sun Sensor(FSS) 및 4륜 독립조향 오도메트리를 단일 ESKF로 결합한 비영상 국부항법 구조를 제안한다. 제안 시스템은 측정 3축 태양벡터와 천체력 기준 태양벡터를 정렬하여 최소회전 보정 쿼터니언을 구성하고, 이를 ESKF 자세 관측값으로 사용하여 INS 자세 드리프트를 제한한다. 휠 오도메트리는 로버의 단거리 속도와 변위를 추정한다. 또한 Ackermann 주행뿐 아니라 제로턴과 독립조향 상태를 처리할 수 있도록 4륜 독립조향 로버의 운동학적 오도메트리 모델을 구성하였다.
 
 \item 통합항법 알고리즘의 시뮬레이션 및 실시간 구현. 제안한 ESKF 항법 알고리즘을 Microsoft AirSim과 Unreal Engine 기반의 달 표면 시뮬레이션 환경에 구현하고, 정상주행, 회전, 휠 슬립 및 VO 중단 조건에서 항법 성능을 평가하였다. 이후 동일 알고리즘을 Jetson Orin Nano와 STM32F7로 구성된 이중 보드 NAVCOM에 탑재하고, PILS와 HILS를 통하여 센서 입력, 좌표변환, 필터 업데이트 및 실시간 데이터 처리의 일관성을 검증하였다. 시뮬레이션과 HILS에서는 FSS 측정값을 포함한 전체 INS/FSS/휠 오도메트리 결합항법 구조를 평가하였다.
 
@@ -148,7 +148,7 @@ Proposed system & Non-visual fallback mode & FSS, IMU, wheel encoders & Heading-
 
 \subsection{전체 항법 아키텍처}
 
-제안 천문항법 시스템의 센서 융합 개요는 Fig.~\ref{fig:navigation_overview}에 나타내었으며, 세부적인 다중센서 항법 소프트웨어 처리 흐름은 Fig.~\ref{fig:navigation_sw_flow}에 나타내었다. 탑재 IMU의 차체좌표계 각속도와 비력을 입력으로 하는 표준 스트랩다운 INS 기계화는 자세, 속도 및 위치를 고속으로 추측항법한다. 두 개의 보조 채널은 절대정보와 고유수용성 정보를 제공한다. 정밀시계 및 탑재 천체력 조회와 결합된 FSS는 측정 태양 시선벡터와 예측방향을 비교하여 절대 방위각 관측값을 생성한다. 휠 인코더는 4륜 독립조향 기구학 모델을 통해 차체좌표계 속도와 요각속도 관측값을 생성한다. ESKF는 공칭 INS 상태의 선형화 오차를 추적하고 보조측정값으로 장기 드리프트를 보정한다. 이후 추정된 오차를 공칭상태에 주입하고 오차상태를 0으로 초기화한다. 이와 함께 휠 속도 및 필터 추종상태를 감시하는 이상상태 감지·복구 채널을 두어, 구덩이 통과나 휠–지면 충격으로 측정값이 정상범위를 벗어나면 해당 측정 업데이트를 차단하고 공분산과 필터 내부상태의 재초기화를 수행한다.
+제안 천문항법 시스템의 센서 융합 개요는 Fig.~\ref{fig:navigation_overview}에 나타내었으며, 세부적인 다중센서 항법 소프트웨어 처리 흐름은 Fig.~\ref{fig:navigation_sw_flow}에 나타내었다. 탑재 IMU의 차체좌표계 각속도와 비력을 입력으로 하는 표준 스트랩다운 INS 기계화는 자세, 속도 및 위치를 고속으로 추측항법한다. 두 개의 보조 채널은 절대정보와 고유수용성 정보를 제공한다. 정밀시계 및 탑재 천체력 조회와 결합된 FSS 채널은 센서좌표계의 3축 태양 시선벡터를 차체좌표계로 변환하고, 예측 태양벡터와 정렬하여 보정 쿼터니언을 생성한다. 이 보정값은 ESKF의 자세 관측값으로 입력된다. 휠 인코더는 4륜 독립조향 기구학 모델을 통해 차체좌표계 속도와 요각속도 관측값을 생성한다. ESKF는 공칭 INS 상태의 선형화 오차를 추적하고 보조측정값으로 장기 드리프트를 보정한다. 이후 추정된 오차를 공칭상태에 주입하고 오차상태를 0으로 초기화한다. 이와 함께 휠 속도 및 필터 추종상태를 감시하는 이상상태 감지·복구 채널을 두어, 구덩이 통과나 휠–지면 충격으로 측정값이 정상범위를 벗어나면 해당 측정 업데이트를 차단하고 공분산과 필터 내부상태의 재초기화를 수행한다.
 
 \begin{figure*}[t]
 \centering
@@ -315,7 +315,7 @@ a_k^\ell=C_{b,k}^\ell(f_{m,k}^b-b_{a,k})+g^\ell
 
 \subsection{센서 동작원리}
 
-본 연구에서 사용하는 FSS는 CMOS 기반 디지털 태양센서이다. 평행한 태양광이 정밀 개구부(슬릿)를 통과하여 광다이오드 배열에 결상되면, 센서 내 알고리즘이 픽셀좌표로 표현된 광점 중심을 센서좌표계의 3차원 단위 태양 시선벡터로 변환한다~\cite{rhee2007satellite}. 사용 장치의 대표 사양은 정확도 0.2°(2σ), 시야각 176°, 질량 약 15 g, 소비전력 100–174 mW, 방사선 내성 24 kRad 이상이다. 넓은 시야각은 달의 낮 동안 태양이 이동하는 전체 구간에서 가시성을 보장하며, 각도 정확도는 로버 방위각을 임무수준 지향 요구조건 이내로 제한하기에 충분하다.
+본 연구에서 사용하는 FSS는 CMOS 기반 디지털 태양센서이다. 평행한 태양광이 정밀 개구부(슬릿)를 통과하여 광다이오드 배열에 결상되면, 센서 내 알고리즘이 픽셀좌표로 표현된 광점 중심을 센서좌표계의 3차원 단위 태양 시선벡터로 변환한다~\cite{rhee2007satellite}. 사용 장치의 대표 사양은 정확도 0.2°(2σ), 시야각 176°, 질량 약 15 g, 소비전력 100–174 mW, 방사선 내성 24 kRad 이상이다. 넓은 시야각은 달의 낮 동안 태양이 이동하는 전체 구간에서 가시성을 확보하며, 각도 정확도는 태양벡터에 수직한 자세오차 성분을 임무수준 지향 요구조건 이내로 제한하기에 충분하다.
 
 두 가지 특성으로 인해 FSS는 달에서 INS를 보조하는 센서로 특히 적합하다. 첫째, 측정값이 본질적으로 비발산한다. 태양방향은 기하학적으로 결정되며 로버의 이전 이동이력에 영향을 받지 않는다. 둘째, FSS는 시각 오도메트리 성능을 저하시키는 지형영향(먼지, 월면토 교란, 낮은 고도의 그림자)에 거의 영향을 받지 않으며, 태양이 센서 시야각 안에 존재해야 한다는 운용조건만 요구한다.
 
@@ -339,7 +339,7 @@ $\bar{\mathbf{S}}_{MS}^i(t)$를 탑재시간에서 천체력으로 계산한 MCI
 \hat{\mathbf{S}}^b(t)=C_\ell^b(\hat q)\mathbf{S}^{\ell}(t),\qquad \hat{\mathbf{S}}^{ss}(t)=C_b^{ss}\hat{\mathbf{S}}^b(t)
 \end{equation}
 
-식~\eqref{eq:7}과 식~\eqref{eq:8}은 원시 시선벡터와 EASI 방위각 관측에서 공통으로 사용하는 예측 체인을 구성한다. Fig.~\ref{fig:ephemeris_variation}은 월내 시각, 일내 시각 및 로버 방위각 변화에 따른 기준 태양벡터의 변화를 나타낸다.
+식~\eqref{eq:7}과 식~\eqref{eq:8}은 측정 3축 태양벡터와 비교할 센서좌표계 및 차체좌표계의 예측벡터를 구성한다. Fig.~\ref{fig:ephemeris_variation}은 월내 시각, 일내 시각 및 로버 방위각 변화에 따른 기준 태양벡터의 변화를 나타낸다.
 
 \begin{figure*}[t]
 \centering
@@ -348,36 +348,40 @@ $\bar{\mathbf{S}}_{MS}^i(t)$를 탑재시간에서 천체력으로 계산한 MCI
 \label{fig:ephemeris_variation}
 \end{figure*}
 
-\subsection{원시 시선벡터 측정}
+\subsection{3축 태양 시선벡터 측정}
 
-FSS 출력을 사용하는 가장 직접적인 방법은 센서좌표계에서 측정된 원시 태양 단위벡터를 관측값으로 처리하는 것이다. 이 방법은 3성분 단위벡터 형식과 2성분 방위각-고각 형식이라는 두 가지 동등한 표현을 허용한다.
+FSS는 센서좌표계에서 정규화된 3성분 태양 시선벡터 $\mathbf S_k^{ss}=[S_x^{ss},S_y^{ss},S_z^{ss}]^\top$를 출력한다. 측정벡터는 고정 장착행렬 $C_{ss}^b$를 이용하여 차체좌표계로 변환하고 다시 단위노름으로 정규화한다.
 
 \begin{equation}
 \tag{9}\label{eq:9}
 \begin{aligned}
-y_k^{\mathrm{LOS}}
-  &=h_{\mathrm{LOS}}(x_k;\widetilde{\mathcal X},t)+e_{ss,k}\\
-  &=\begin{bmatrix}
-    \arctan\!\bigl(S_y^{ss}/S_x^{ss}\bigr)\\[2pt]
-    -\arcsin\!\bigl(S_z^{ss}\bigr)
-  \end{bmatrix}+e_{ss,k}.
+\mathbf y_k^{\mathrm{LOS}}&=\mathbf S_k^{ss}+\mathbf e_{ss,k},\\
+\mathbf S_{m,k}^{b}&=
+\frac{C_{ss}^{b}\mathbf y_k^{\mathrm{LOS}}}
+{\left\lVert C_{ss}^{b}\mathbf y_k^{\mathrm{LOS}}\right\rVert}.
 \end{aligned}
 \end{equation}
 
-또는 동등하게 $y_k^{\mathrm{LOS}} = \mathbf{S}^{ss}(t) + e_{ss,k}$로 표현할 수 있다. 측정잡음 $e_{ss,k}$는 FSS 각도 정확도 사양으로부터 도출된 공분산을 갖는 영평균 Gaussian 잡음으로 모델링한다. 원시 형식은 센서 원시데이터를 사용할 수 있고 센서 내부의 광점중심 추출 알고리즘에 대한 통계적 특성이 충분히 규명된 경우에 적합하다. 주된 단점은 로버 상태에 대한 Jacobian이 하나의 관측행렬에서 자세, 위치 및 달 자전 기구학을 서로 결합한다는 점이다.
+측정잡음 $\mathbf e_{ss,k}$는 FSS 각도 정확도 사양을 3축 벡터공분산으로 전파한 영평균 Gaussian 잡음으로 모델링한다. 센서 시야 밖 측정, 광점중심 추출 실패 및 단위노름 허용범위를 벗어난 측정은 자세 업데이트 전에 제거한다.
 
-\subsection{EASI 방식 방위각 오차 측정}
+\subsection{태양벡터 기반 쿼터니언 자세 보정}
 
-본 연구에서 주 관측값으로 채택한 두 번째 측정 형식은 EASI(Ephemeris-Aided Sun Indicator) 구성에 따른다~\cite{ilyas2016integrated}. 이 방식에서는 FSS 출력을 먼저 수평 기준(방위각이 제거된 수평 자세) 좌표계의 방위각 추정치로 축약한 뒤, 천체력으로 예측한 태양 방위각과 로버에서 측정한 태양 방위각의 각도차로 방위각 오차를 정의한다.
+ESKF 자세 보정에는 식~\eqref{eq:8}의 예측 차체 태양벡터 $\hat{\mathbf S}_k^b$를 식~\eqref{eq:9}의 측정벡터 $\mathbf S_{m,k}^b$에 정렬시키는 최소회전 쿼터니언을 사용한다. 두 단위벡터의 외적과 내적을 각각 $\mathbf c_k$와 $d_k$로 정의하면 보정 쿼터니언과 최소좌표 자세잔차는 다음과 같다.
 
 \begin{equation}
 \tag{10}\label{eq:10}
-\begin{aligned}y_k^\psi&=h_\psi(x_k;\widetilde{\mathcal X},t)+e_{\psi,k}\\&=\underbrace{\psi(\mathbf S^\ell(t))}_{\text{천체력 방위각}}-\underbrace{\psi(C_b^{\ell'}C_{ss}^b\mathbf S^{ss})}_{\text{방위각 제거 FSS 방위각}}-\tilde\psi+e_{\psi,k}.\end{aligned}
+\begin{aligned}
+\mathbf c_k&=\hat{\mathbf S}_k^b\times\mathbf S_{m,k}^b,
+&d_k&=(\hat{\mathbf S}_k^b)^\top\mathbf S_{m,k}^b,\\
+\delta q_{ss,k}&=
+\frac{1}{\sqrt{2(1+d_k)}}
+\begin{bmatrix}1+d_k\\ \mathbf c_k\end{bmatrix}
+=\begin{bmatrix}\delta q_{w,k}\\ \delta\mathbf q_{v,k}\end{bmatrix},\\
+\mathbf r_k^{ss}&=2\,\operatorname{sign}(\delta q_{w,k})\,\delta\mathbf q_{v,k}.
+\end{aligned}
 \end{equation}
 
-여기서 $\psi(X) = \operatorname{atan2}(X_2,X_1)$는 수평면에서 벡터의 방위각을 추출하고, $C_b^{n^{\prime}}$는 현재 롤 및 피치 추정값으로 복원한 방위각 제거(영 요각) 차체-국부 회전행렬이며, $\tilde{\psi}$는 INS가 유지하는 공칭 방위각이다. 식 (10)의 구조는 직관적이다. 첫 번째 항은 천체력이 예측한 태양 방위각을 로버가 정면으로 바라볼 때 가져야 하는 방위각이고, 두 번째 항은 FSS 측정값이 수평 플랫폼에 투영될 때의 방위각이다. 두 값의 차이에서 INS 방위각을 뺀 결과가 ESKF에 주입되는 방위각 오차이다.
-
-EASI 형식은 두 가지 실용적 장점이 있다. 첫째, 관측값이 스칼라이며 경사각 보정을 함께 되먹임하는 경우에도 2차원에 불과하므로 위치와 분리된 수치적으로 양호한 방위각 채널을 제공한다. 둘째, 방위각 제거 회전행렬 $C_b^{n^{\prime}}$를 사용함으로써 롤과 피치에 대한 의존성을 알려진 공칭값에 제한하므로, $\delta x$의 방위각 오차 성분에 대한 식 (10)의 선형화는 본질적으로 $H_\psi = [0,\ \cdots,\ 0,\ 1,\ 0,\ \cdots,\ 0]$인 희소하고 수치적으로 안정된 관측행이 된다. ESKF는 FSS 출력의 전처리 수준에 따라 식 (9) 또는 식 (10)을 사용하도록 설정할 수 있으며, 아키텍처를 변경하지 않고 두 형식을 모두 지원한다.
+식~\eqref{eq:10}의 벡터부는 작은 자세오차에서 회전벡터와 일치하므로 ESKF의 3성분 자세오차 관측잔차로 직접 사용할 수 있다. 자세오차 추정값은 right-multiplicative 보정 쿼터니언으로 변환되어 공칭 INS 쿼터니언에 주입된다. 다만 한 시각의 단일 태양방향은 태양벡터 자체를 축으로 하는 회전을 관측할 수 없으므로, 유효 자세관측 부분공간은 $P_{\perp,k}=I-\hat{\mathbf S}_k^b(\hat{\mathbf S}_k^b)^\top$로 표현되는 rank-2 공간이다. 따라서 태양방향 축의 공분산은 크게 설정하고, 나머지 자세 자유도는 IMU 전파와 중력기준 경사정보로 제한한다. 또한 $d_k\simeq-1$인 반대방향 특이조건과 큰 혁신값은 validity gate에서 제외한다.
 
 \section{4륜 독립조향 Ackermann 오도메트리}
 
@@ -575,7 +579,7 @@ FSS와 휠 오도메트리 측정은 각각의 비선형 측정함수 $h_j(\hat{
 \begin{aligned}r_k&=z_k-h_j(\hat x_k^-),\\H_k&=\left.\frac{\partial h_j(\hat x_k^-\oplus\delta x)}{\partial\delta x}\right|_{\delta x=0}.\end{aligned}
 \end{equation}
 
-FSS 방위각 잔차에는 $r_\psi=\operatorname{wrap}_{[-\pi,\pi)}(z_\psi-h_\psi)$를 적용한다. 전체 공칭상태에 대한 Jacobian $H_x$를 사용하는 경우에는 $H_k=H_xX_\delta$로 계산하며, right-multiplicative 쿼터니언 오차에 대한 mapping은 다음과 같다.
+FSS 업데이트에는 식~\eqref{eq:10}의 쿼터니언 벡터부로 구성한 자세잔차 $\mathbf r_k^{ss}$를 사용한다. 관측 Jacobian의 자세 블록에는 $P_{\perp,k}$를 적용하여 관측 불가능한 태양방향 축이 필터를 과도하게 보정하지 않도록 한다. 전체 공칭상태에 대한 Jacobian $H_x$를 사용하는 경우에는 $H_k=H_xX_\delta$로 계산하며, right-multiplicative 쿼터니언 오차에 대한 mapping은 다음과 같다.
 
 \begin{equation}
 \tag{26}\label{eq:26}
@@ -683,7 +687,7 @@ FSS 시뮬레이션에서는 로버의 위치와 시각에 따른 기준 태양�
 
 \end{itemize}
 
-INS-only 결과는 관성항법의 기본적인 오차 누적특성을 나타낸다. 휠 오도메트리를 추가한 결과를 통해 속도 및 단거리 위치추정 개선효과를 평가하며, FSS를 추가한 결과를 통해 방위각 드리프트 제한효과를 분석한다. 시뮬레이션에서 사용한 센서 입력과 NAVCOM 기반 항법처리 흐름은 Fig.~\ref{fig:hw_architecture}에 나타내었다.
+INS-only 결과는 관성항법의 기본적인 오차 누적특성을 나타낸다. 휠 오도메트리를 추가한 결과를 통해 속도 및 단거리 위치추정 개선효과를 평가하며, FSS를 추가한 결과를 통해 쿼터니언 자세 보정과 자세 드리프트 제한효과를 분석한다. 시뮬레이션에서 사용한 센서 입력과 NAVCOM 기반 항법처리 흐름은 Fig.~\ref{fig:hw_architecture}에 나타내었다.
 
 \begin{figure*}[t]
 \centering

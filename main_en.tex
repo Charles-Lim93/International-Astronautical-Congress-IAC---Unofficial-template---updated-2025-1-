@@ -79,7 +79,7 @@ Chandrayaan-3 / Pragyan & Semi-autonomous & Stereo Navcams, mobility telemetry &
 SLIM / LEV-2 & Fully autonomous, short-range & Dual cameras, motion sensors & Autonomous mobility and imaging \\
 IM-2 / YAOKI* & Teleoperated & Camera, mobility telemetry & Imaging only; no surface traverse \\
 Rashid-1 / Rashid-2** & Ground-in-the-loop & Wide-field cameras, mobility sensors & Vision-assisted surface operation \\
-Proposed system & Non-visual fallback mode & FSS, IMU, wheel encoders & Heading-bounded local dead reckoning \\
+Proposed system & Non-visual fallback mode & FSS, IMU, wheel encoders & Sun-vector attitude-aided local dead reckoning \\
 \bottomrule
 \end{tabularx}
 \end{table*}
@@ -90,12 +90,12 @@ Sun-vector-based celestial navigation has been studied as such an aid. Comparing
 
 The ESKF is a standard framework for fusing inertial, celestial, and odometric measurements~\cite{lefferts1982kalman,sola2017quaternion,sveinsson2012insgps,groves2013principles}. It tracks a small linearized error state around a nonlinearly propagated nominal state, handles the quaternion unit-norm constraint consistently, and estimates attitude errors and IMU biases in minimal coordinates. These properties are well suited to lunar navigation with intermittent absolute updates.
 
-This study implements and verifies a complete ESKF-based multisensor navigation system for lunar-rover operation. It evaluates whether FSS Sun-vector measurements can bound INS heading drift and whether wheel odometry can maintain short-range local-position continuity when VO is unavailable or unreliable, provided that the Sun remains within the sensor field of view. The architecture combines an INS, a CMOS-based FSS, and wheel odometry from a four-wheel independent-steering rover in one error-state filter under local-plane and constant-gravity assumptions.
+This study implements and verifies a complete ESKF-based multisensor navigation system for lunar-rover operation. It evaluates whether a quaternion attitude correction constructed from the measured three-axis FSS Sun vector can bound INS attitude drift and whether wheel odometry can maintain short-range local-position continuity when VO is unavailable or unreliable, provided that the Sun remains within the sensor field of view. The architecture combines an INS, a CMOS-based FSS, and wheel odometry from a four-wheel independent-steering rover in one error-state filter under local-plane and constant-gravity assumptions.
 
 The main contributions are as follows.
 
 \begin{enumerate}[label=(\roman*)]
-\item A non-visual local-navigation architecture for a lunar rover that combines an INS, FSS, and four-wheel independent-steering odometry in a single ESKF. An ephemeris-based Sun vector bounds heading drift, while wheel odometry estimates short-range velocity and displacement. The Sun-vector transformations and measurement models are formulated consistently, and the rover kinematics support Ackermann steering, zero turns, and independent steering.
+\item A non-visual local-navigation architecture for a lunar rover that combines an INS, FSS, and four-wheel independent-steering odometry in a single ESKF. The measured three-axis Sun vector is aligned with its ephemeris prediction to form a minimum-rotation correction quaternion for the attitude update, while wheel odometry estimates short-range velocity and displacement. The rover kinematics support Ackermann steering, zero turns, and independent steering.
 
 \item Simulation and real-time implementation of the integrated navigation algorithm. The ESKF is evaluated in a lunar-surface environment based on Microsoft AirSim and Unreal Engine under nominal driving, turning, wheel-slip, and VO-outage conditions. The same algorithm is implemented on a dual-board NAVCOM composed of a Jetson Orin Nano and STM32F7 and checked through PILS and HILS.
 
@@ -108,7 +108,7 @@ Section 2 presents the navigation architecture and reference frames. Section 3 d
 
 \subsection{Overall Navigation Architecture}
 
-The sensor-fusion concept is shown in Fig.~\ref{fig:navigation_overview}, and the detailed multisensor software flow is shown in Fig.~\ref{fig:navigation_sw_flow}. A strapdown INS propagates attitude, velocity, and position at high rate using IMU angular-rate and specific-force measurements. The FSS, together with the onboard clock and ephemeris, generates an absolute heading observation by comparing measured and predicted Sun directions. The wheel encoders provide body-frame velocity and yaw-rate observations through the four-wheel kinematic model. The ESKF tracks the linearized errors of the nominal INS state and uses the aiding measurements to correct long-term drift. A monitoring and recovery channel rejects abnormal wheel measurements and reinitializes filter information when disturbances caused by pits or wheel--terrain impacts exceed the normal range.
+The sensor-fusion concept is shown in Fig.~\ref{fig:navigation_overview}, and the detailed multisensor software flow is shown in Fig.~\ref{fig:navigation_sw_flow}. A strapdown INS propagates attitude, velocity, and position at high rate using IMU angular-rate and specific-force measurements. The FSS channel transforms the measured three-axis Sun line-of-sight vector into the body frame and aligns it with the direction predicted from the onboard clock and ephemeris. The resulting correction quaternion is supplied to the ESKF as an attitude observation. The wheel encoders provide body-frame velocity and yaw-rate observations through the four-wheel kinematic model. The ESKF tracks the linearized errors of the nominal INS state and uses the aiding measurements to correct long-term drift. A monitoring and recovery channel rejects abnormal wheel measurements and reinitializes filter information when disturbances caused by pits or wheel--terrain impacts exceed the normal range.
 
 \begin{figure*}[t]
 \centering
@@ -250,7 +250,7 @@ Here, $C_i^m(t)$ is the time-dependent MCI-to-MCMF rotation. Solar parallax due 
 \tag{8}\label{eq:8}
 \hat{\mathbf{S}}^b(t)=C_\ell^b(\hat q)\mathbf{S}^{\ell}(t),\qquad \hat{\mathbf{S}}^{ss}(t)=C_b^{ss}\hat{\mathbf{S}}^b(t).
 \end{equation}
-Equations~\eqref{eq:7} and~\eqref{eq:8} define the prediction chain shared by the raw line-of-sight and EASI heading measurements. Figure~\ref{fig:ephemeris_variation} shows the reference-vector variation over month, time of day, and rover heading.
+Equations~\eqref{eq:7} and~\eqref{eq:8} define the predicted sensor- and body-frame vectors compared with the measured three-axis Sun vector. Figure~\ref{fig:ephemeris_variation} shows the reference-vector variation over month, time of day, and rover heading.
 
 \begin{figure*}[t]
 \centering
@@ -259,33 +259,36 @@ Equations~\eqref{eq:7} and~\eqref{eq:8} define the prediction chain shared by th
 \label{fig:ephemeris_variation}
 \end{figure*}
 
-\subsection{Raw Line-of-Sight Measurement}
+\subsection{Three-Axis Sun Line-of-Sight Measurement}
 
-The FSS output can be processed directly as a measured unit Sun vector in the sensor frame, either as a three-component unit vector or as a two-component azimuth--elevation observation:
+The FSS outputs a normalized three-component Sun line-of-sight vector $\mathbf S_k^{ss}=[S_x^{ss},S_y^{ss},S_z^{ss}]^\top$ in the sensor frame. It is transformed to the body frame using the fixed mounting matrix $C_{ss}^b$ and normalized again:
 \begin{equation}
 \tag{9}\label{eq:9}
 \begin{aligned}
-y_k^{\mathrm{LOS}}
-  &=h_{\mathrm{LOS}}(x_k;\widetilde{\mathcal X},t)+e_{ss,k}\\
-  &=\begin{bmatrix}
-    \arctan\!\bigl(S_y^{ss}/S_x^{ss}\bigr)\\[2pt]
-    -\arcsin\!\bigl(S_z^{ss}\bigr)
-  \end{bmatrix}+e_{ss,k}.
+\mathbf y_k^{\mathrm{LOS}}&=\mathbf S_k^{ss}+\mathbf e_{ss,k},\\
+\mathbf S_{m,k}^{b}&=
+\frac{C_{ss}^{b}\mathbf y_k^{\mathrm{LOS}}}
+{\left\lVert C_{ss}^{b}\mathbf y_k^{\mathrm{LOS}}\right\rVert}.
 \end{aligned}
 \end{equation}
-Equivalently, $y_k^{\mathrm{LOS}}=\mathbf{S}^{ss}(t)+e_{ss,k}$. The noise $e_{ss,k}$ is modeled as zero-mean Gaussian noise with covariance derived from the FSS angular-accuracy specification. The raw-vector form is useful when the sensor raw data and centroid statistics are available, but its Jacobian couples attitude, position, and lunar-rotation kinematics.
+The noise $\mathbf e_{ss,k}$ is modeled as zero-mean Gaussian noise whose three-axis covariance is propagated from the FSS angular-accuracy specification. Measurements outside the field of view, failed spot-centroid solutions, and vectors outside the unit-norm tolerance are rejected before the attitude update.
 
-\subsection{EASI Heading-Error Measurement}
+\subsection{Sun-Vector Quaternion Attitude Correction}
 
-The primary measurement form follows the Ephemeris-Aided Sun Indicator (EASI) configuration~\cite{ilyas2016integrated}. The FSS output is reduced to an azimuth estimate in a horizontal, yaw-removed frame. Heading error is defined by the angular difference between the ephemeris-predicted and rover-measured solar azimuths:
+The attitude update uses the minimum-rotation quaternion that aligns the predicted body-frame Sun vector $\hat{\mathbf S}_k^b$ from Eq.~\eqref{eq:8} with the measured vector $\mathbf S_{m,k}^b$ from Eq.~\eqref{eq:9}. Defining their cross and dot products as $\mathbf c_k$ and $d_k$, respectively, gives
 \begin{equation}
 \tag{10}\label{eq:10}
 \begin{aligned}
-y_k^\psi&=h_\psi(x_k;\widetilde{\mathcal X},t)+e_{\psi,k}\\
-&=\underbrace{\psi(\mathbf S^\ell(t))}_{\text{ephemeris azimuth}}-\underbrace{\psi(C_b^{\ell'}C_{ss}^b\mathbf S^{ss})}_{\text{yaw-removed FSS azimuth}}-\tilde\psi+e_{\psi,k}.
+\mathbf c_k&=\hat{\mathbf S}_k^b\times\mathbf S_{m,k}^b,
+&d_k&=(\hat{\mathbf S}_k^b)^\top\mathbf S_{m,k}^b,\\
+\delta q_{ss,k}&=
+\frac{1}{\sqrt{2(1+d_k)}}
+\begin{bmatrix}1+d_k\\ \mathbf c_k\end{bmatrix}
+=\begin{bmatrix}\delta q_{w,k}\\ \delta\mathbf q_{v,k}\end{bmatrix},\\
+\mathbf r_k^{ss}&=2\,\operatorname{sign}(\delta q_{w,k})\,\delta\mathbf q_{v,k}.
 \end{aligned}
 \end{equation}
-Here, $\psi(X)=\operatorname{atan2}(X_2,X_1)$ extracts horizontal azimuth, $C_b^{\ell'}$ is reconstructed from the current roll and pitch estimates with zero yaw, and $\tilde\psi$ is the nominal INS heading. The EASI measurement is scalar, remains separated from position, and yields a sparse, numerically stable heading-error observation. The implementation supports either Eq.~\eqref{eq:9} or Eq.~\eqref{eq:10} without changing the architecture.
+For small attitude errors, the vector part of Eq.~\eqref{eq:10} is equivalent to a rotation vector and is therefore used directly as the three-component ESKF attitude residual. The estimated attitude error is converted to a right-multiplicative correction quaternion and injected into the nominal INS quaternion. A single instantaneous Sun direction cannot observe rotation about the Sun vector itself; the valid attitude-observation subspace is therefore the rank-two projector $P_{\perp,k}=I-\hat{\mathbf S}_k^b(\hat{\mathbf S}_k^b)^\top$. The covariance along the Sun-vector axis is inflated, while the remaining degree of freedom is constrained by IMU propagation and the gravity-referenced inclination. Antiparallel geometry with $d_k\simeq-1$ and excessive innovations are excluded by the validity gate.
 
 \section{Four-Wheel Independent-Steering Ackermann Odometry}
 
@@ -449,7 +452,7 @@ FSS and wheel-odometry measurements are processed asynchronously through nonline
 \tag{25}\label{eq:25}
 \begin{aligned}r_k&=z_k-h_j(\hat x_k^-),\\H_k&=\left.\frac{\partial h_j(\hat x_k^-\oplus\delta x)}{\partial\delta x}\right|_{\delta x=0}.\end{aligned}
 \end{equation}
-The heading residual is wrapped as $r_\psi=\operatorname{wrap}_{[-\pi,\pi)}(z_\psi-h_\psi)$. For a Jacobian $H_x$ with respect to the full nominal state, $H_k=H_xX_\delta$, where
+The FSS update uses the attitude residual $\mathbf r_k^{ss}$ formed from the vector part of the correction quaternion in Eq.~\eqref{eq:10}. The attitude block of the measurement Jacobian includes $P_{\perp,k}$ so that the unobservable Sun-axis rotation is not over-corrected. For a Jacobian $H_x$ with respect to the full nominal state, $H_k=H_xX_\delta$, where
 \begin{equation}
 \tag{26}\label{eq:26}
 \begin{aligned}X_\delta&=\operatorname{blkdiag}(I_6,Q_{\delta\theta},I_6),\\Q_{\delta\theta}&=\frac12\begin{bmatrix}-q_v^\top\\q_wI+[q_v]_\times\end{bmatrix},\\q&=[q_w,\ q_v^\top]^\top.\end{aligned}
@@ -539,7 +542,7 @@ Three navigation configurations are compared:
 \item INS + wheel odometry, and
 \item INS + wheel odometry + FSS.
 \end{itemize}
-The INS-only case shows unbounded inertial error accumulation. Wheel odometry improves short-range velocity and position, while the FSS bounds heading drift. Figure~\ref{fig:hw_architecture} shows the sensor inputs and NAVCOM-based navigation-processing flow used for the simulation verification.
+The INS-only case shows unbounded inertial error accumulation. Wheel odometry improves short-range velocity and position, while the FSS quaternion update bounds attitude drift in the Sun-vector-observable subspace. Figure~\ref{fig:hw_architecture} shows the sensor inputs and NAVCOM-based navigation-processing flow used for the simulation verification.
 
 \begin{figure*}[t]
 \centering
