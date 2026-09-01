@@ -439,11 +439,11 @@ The continuous and discrete error dynamics are
 \begin{aligned}\delta\dot x&=F_c\delta x+G_cw,\\\delta x_{k+1}&=\Phi_k\delta x_k+w_{d,k},\\\Phi_k&=\exp(F_c\Delta t).\end{aligned}
 \end{equation}
 For the short-range local Cartesian model,
-\begin{equation}
-\tag{23}\label{eq:23}
-\begin{aligned}
+\begin{subequations}\label{eq:23}
+\begin{align}
 A_f&\equiv[\hat f^b]_\times,
-&A_\omega&\equiv[\hat\omega_{\ell b}^b]_\times,\\[2pt]
+&A_\omega&\equiv[\hat\omega_{\ell b}^b]_\times,
+\label{eq:23a}\\
 F_c&=
 \begin{bmatrix}
 0&I&0&0&0\\
@@ -451,7 +451,8 @@ F_c&=
 0&0&-A_\omega&0&-I\\
 0&0&0&0&0\\
 0&0&0&0&0
-\end{bmatrix},\\[4pt]
+\end{bmatrix},
+\label{eq:23b}\\
 G_c&=
 \begin{bmatrix}
 0&0&0&0\\
@@ -460,8 +461,9 @@ G_c&=
 0&0&I&0\\
 0&0&0&I
 \end{bmatrix}.
-\end{aligned}
-\end{equation}
+\label{eq:23c}
+\end{align}
+\end{subequations}
 With continuous-time noise power spectral density $Q_c$,
 \begin{equation}
 \tag{24}\label{eq:24}
@@ -501,22 +503,24 @@ Joseph form helps preserve covariance symmetry and positive semidefiniteness und
 \subsection{Error Injection and Reset}
 
 After each measurement update, the estimated error is injected into the nominal state. With the right-multiplicative convention,
-\begin{equation}
-\tag{29}\label{eq:29}
-\begin{aligned}
+\begin{subequations}\label{eq:29}
+\begin{align}
 p^\ell&\leftarrow p^\ell+\delta\hat p^\ell,
-&v^\ell&\leftarrow v^\ell+\delta\hat v^\ell,\\
+&v^\ell&\leftarrow v^\ell+\delta\hat v^\ell,\notag\\
 q_b^\ell&\leftarrow
-  \operatorname{norm}\!\left(q_b^\ell\otimes\delta q(\delta\hat\theta)\right),\\
+  \operatorname{norm}\!\left(q_b^\ell\otimes
+  \delta q(\delta\hat\theta)\right),\notag\\
 b_a&\leftarrow b_a+\delta\hat b_a,
-&b_g&\leftarrow b_g+\delta\hat b_g,\\
+&b_g&\leftarrow b_g+\delta\hat b_g
+\label{eq:29a}\\
 G_{\mathrm{reset}}
   &=\operatorname{blkdiag}\!\left(
-    I_6,I-\tfrac12[\delta\hat\theta]_\times,I_6\right),\\
+    I_6,I-\tfrac12[\delta\hat\theta]_\times,I_6\right),\notag\\
 P&\leftarrow G_{\mathrm{reset}}P^+G_{\mathrm{reset}}^\top,
-&\delta\hat x&\leftarrow0.
-\end{aligned}
-\end{equation}
+&\delta\hat x&\leftarrow0
+\label{eq:29b}
+\end{align}
+\end{subequations}
 The corrected nominal state becomes the next linearization point. The quaternion is normalized after each injection, and the bias ordering $[b_a,b_g]$ is kept consistent in the state and covariance~\cite{sola2017quaternion}.
 
 \section{Simulation}

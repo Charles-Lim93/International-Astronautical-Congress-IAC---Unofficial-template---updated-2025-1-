@@ -558,11 +558,11 @@ right-multiplicative 자세오차를 기준으로 공칭궤적 주위에서 1차
 
 단거리 국부 Cartesian 모델의 상태천이 및 잡음입력 행렬은 다음과 같다.
 
-\begin{equation}
-\tag{23}\label{eq:23}
-\begin{aligned}
+\begin{subequations}\label{eq:23}
+\begin{align}
 A_f&\equiv[\hat f^b]_\times,
-&A_\omega&\equiv[\hat\omega_{\ell b}^b]_\times,\\[2pt]
+&A_\omega&\equiv[\hat\omega_{\ell b}^b]_\times,
+\label{eq:23a}\\
 F_c&=
 \begin{bmatrix}
 0&I&0&0&0\\
@@ -570,7 +570,8 @@ F_c&=
 0&0&-A_\omega&0&-I\\
 0&0&0&0&0\\
 0&0&0&0&0
-\end{bmatrix},\\[4pt]
+\end{bmatrix},
+\label{eq:23b}\\
 G_c&=
 \begin{bmatrix}
 0&0&0&0\\
@@ -579,8 +580,9 @@ G_c&=
 0&0&I&0\\
 0&0&0&I
 \end{bmatrix}.
-\end{aligned}
-\end{equation}
+\label{eq:23c}
+\end{align}
+\end{subequations}
 
 $Q_c$를 연속시간 잡음 전력스펙트럼밀도 행렬이라 하면 이산 공정잡음 공분산과 상태공분산 전파는 다음과 같다.
 
@@ -632,22 +634,24 @@ Joseph form은 유한정밀도 계산에서 공분산의 대칭성과 양의 준
 
 측정 업데이트 이후 추정된 오차를 공칭상태에 주입한다. 자세는 6.1절에서 정의한 right-multiplicative convention에 따라 공칭 쿼터니언의 오른쪽에 곱한다. 주입 후에는 reset Jacobian으로 공분산의 선형화 기준점을 이동하고 오차상태 평균을 0으로 초기화한다.
 
-\begin{equation}
-\tag{29}\label{eq:29}
-\begin{aligned}
+\begin{subequations}\label{eq:29}
+\begin{align}
 p^\ell&\leftarrow p^\ell+\delta\hat p^\ell,
-&v^\ell&\leftarrow v^\ell+\delta\hat v^\ell,\\
+&v^\ell&\leftarrow v^\ell+\delta\hat v^\ell,\notag\\
 q_b^\ell&\leftarrow
-  \operatorname{norm}\!\left(q_b^\ell\otimes\delta q(\delta\hat\theta)\right),\\
+  \operatorname{norm}\!\left(q_b^\ell\otimes
+  \delta q(\delta\hat\theta)\right),\notag\\
 b_a&\leftarrow b_a+\delta\hat b_a,
-&b_g&\leftarrow b_g+\delta\hat b_g,\\
+&b_g&\leftarrow b_g+\delta\hat b_g
+\label{eq:29a}\\
 G_{\mathrm{reset}}
   &=\operatorname{blkdiag}\!\left(
-    I_6,I-\tfrac12[\delta\hat\theta]_\times,I_6\right),\\
+    I_6,I-\tfrac12[\delta\hat\theta]_\times,I_6\right),\notag\\
 P&\leftarrow G_{\mathrm{reset}}P^+G_{\mathrm{reset}}^\top,
-&\delta\hat x&\leftarrow0.
-\end{aligned}
-\end{equation}
+&\delta\hat x&\leftarrow0
+\label{eq:29b}
+\end{align}
+\end{subequations}
 
 이 과정을 통해 다음 전파단계의 선형화 기준점은 보정된 공칭상태와 일치한다. 구현에서는 매 주입 후 쿼터니언을 정규화하고, 상태벡터와 공분산에서 가속도계 바이어스와 자이로스코프 바이어스의 순서를 $[b_a,\ b_g]$로 동일하게 유지한다~\cite{sola2017quaternion}.
 
