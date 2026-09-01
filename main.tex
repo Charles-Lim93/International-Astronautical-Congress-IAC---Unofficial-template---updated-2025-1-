@@ -632,21 +632,22 @@ P&\leftarrow G_{\mathrm{reset}}P^+G_{\mathrm{reset}}^\top,
 
 Microsoft AirSim과 Unreal Engine을 이용하여 달 표면 로버 주행환경을 구성한다. 시뮬레이션에는 일정한 월면 중력, 인공 월면 지형, 로버의 4륜 독립조향 기구학과 휠–지면 상호작용 모델을 포함한다. IMU, FSS 및 휠 엔코더의 측정주기, 센서 잡음, 바이어스와 시간동기 조건을 정의하고, 시뮬레이션에서 생성된 센서 데이터를 제안한 ESKF에 입력한다. 구성한 월면 지형과 로버 주행환경은 Fig.~\ref{fig:lunar_simulation_environment}에 나타내었다.
 
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
-\begin{subfigure}[t]{0.49\textwidth}
+\begin{subfigure}[t]{0.98\linewidth}
   \centering
   \includegraphics[width=\linewidth]{pics/moon.png}
   \caption{Lunar terrain scene}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.49\textwidth}
+\end{subfigure}
+\par\medskip
+\begin{subfigure}[t]{0.98\linewidth}
   \centering
   \includegraphics[width=\linewidth]{pics/sim_moon_car_crop.png}
   \caption{Rover driving simulation}
 \end{subfigure}
 \caption{Unreal Engine/AirSim 기반 월면 지형 및 로버 주행 시뮬레이션 환경.}
 \label{fig:lunar_simulation_environment}
-\end{figure*}
+\end{figure}
 
 FSS 시뮬레이션에서는 로버의 위치와 시각에 따른 기준 태양벡터를 천체력으로부터 계산하고, MCI--MCMF 변환과 착륙지 기준의 고정 국부좌표계 변환을 거쳐 센서좌표계의 태양 시선벡터를 생성한다. 이 측정값에는 실제 FSS 성능을 고려한 각도잡음과 바이어스를 추가한다.
 
@@ -767,7 +768,14 @@ Atti \#3 &  -2.00 &  -1.80 & After move \\
 \end{table}
 
 \section{결론}
-본 절은 시뮬레이션 및 하드웨어 시험의 최종 정량결과가 확정된 이후 작성한다.
+
+본 연구에서는 GNSS를 사용할 수 없고 영상기반 항법의 가용성이 조명과 지형조건에 따라 저하될 수 있는 월면 로버를 대상으로, INS, 정밀 태양센서(FSS) 및 4륜 독립조향 휠 오도메트리를 결합한 ESKF 기반 국부항법시스템을 제안하였다. 제안 시스템은 단거리·저속 주행에 적합한 국부 Cartesian 좌표계와 일정 중력 가정에서 공칭 INS 상태를 고속으로 전파하고, 비동기 보조측정을 이용하여 누적오차를 보정한다. FSS의 3축 태양 시선벡터는 탑재 천체력으로 계산한 기준 태양벡터와 정렬되어 최소회전 보정 쿼터니언을 구성하며, 이 쿼터니언의 최소좌표 잔차를 ESKF 자세 관측값으로 사용한다. 휠 오도메트리는 4륜 독립조향 형상을 직접 반영하여 일반 Ackermann 주행뿐 아니라 제로턴과 휠베이스 조정 중에도 속도와 요각속도 관측값을 제공한다.
+
+Unreal Engine/AirSim 시뮬레이션에서는 INS only와 INS + wheel odometry + FSS의 두 구성을 동일한 기준궤적과 초기조건에서 비교하였다. 결합항법 결과는 roll, pitch 및 yaw 자세변화와 수평 속도·위치 기준값을 전반적으로 추종하였으며, FSS 쿼터니언 업데이트가 관성 자세오차의 장기 누적을 제한하고 휠 오도메트리가 평면 주행속도와 단거리 위치추정의 연속성을 보조함을 확인하였다. 급격한 지형 고도변화 구간에서는 수직 속도와 위치에 과도오차가 나타났으나 이후 기준궤적으로 다시 수렴하였다.
+
+제안 알고리즘은 Jetson Orin Nano와 STM32F7로 구성된 NAVCOM에 실시간 구현하였다. 실물 크기 4륜 독립조향 로버를 이용한 인공 월면토 주행시험에서는 구덩이와 휠--지면 충격에 의해 오염된 휠 오도메트리 업데이트를 감지·차단하고 필터를 재초기화한 뒤 정상 추종상태로 복귀하는 것을 확인하였다. 표에 제시된 시험에서 수평 위치의 최대 절대오차는 $x$ 방향 0.36~m, $y$ 방향 0.12~m였으며, 제로턴과 주행 후 방향각의 최대 절대오차는 0.57$^\circ$였다. 이 결과는 제안한 4륜 오도메트리, 실시간 ESKF 구현 및 이상상태 복구절차가 실제 로버 플랫폼에서 유효하게 동작함을 보여준다.
+
+다만 실내 실물시험에서는 실제 태양과 동일한 평행광 및 입사각 조건을 재현하기 어려워 FSS 업데이트를 사용하지 않았다. 따라서 FSS를 포함한 전체 결합항법 성능은 시뮬레이션과 HILS에서 검증하였고, 실물시험은 휠--관성항법 하위시스템과 NAVCOM 실시간 구현의 검증에 해당한다. 향후에는 평행광 태양 모사장치 또는 실제 태양광을 이용한 FSS--INS 결합시험, 다양한 태양고도와 휠 슬립 조건에 대한 반복·Monte Carlo 평가, 그리고 장거리 주행을 위한 월면 곡률, 달 자전 및 위치의존 중력모델의 확장이 필요하다. 이러한 검증을 통해 제안 구조는 영상항법이 제한되는 월면 구간에서 항법 연속성과 고장 허용성을 제공하는 비영상 보조항법 채널로 발전할 수 있다.
 
 \section*{감사의 글}
 % TODO: 연구과제 및 지원기관 정보를 입력한다.

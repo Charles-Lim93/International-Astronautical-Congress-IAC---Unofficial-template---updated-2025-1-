@@ -498,21 +498,22 @@ The corrected nominal state becomes the next linearization point. The quaternion
 
 The lunar rover environment is implemented using Microsoft AirSim and Unreal Engine. It includes constant lunar gravity, synthetic terrain, four-wheel independent-steering kinematics, and wheel--terrain interaction. IMU, FSS, and encoder sampling, noise, bias, and time synchronization are defined, and the simulated sensor data are supplied to the ESKF. Figure~\ref{fig:lunar_simulation_environment} shows the terrain and rover-driving environment.
 
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
-\begin{subfigure}[t]{0.49\textwidth}
+\begin{subfigure}[t]{0.98\linewidth}
   \centering
   \includegraphics[width=\linewidth]{pics/moon.png}
   \caption{Lunar terrain scene}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.49\textwidth}
+\end{subfigure}
+\par\medskip
+\begin{subfigure}[t]{0.98\linewidth}
   \centering
   \includegraphics[width=\linewidth]{pics/sim_moon_car_crop.png}
   \caption{Rover driving simulation}
 \end{subfigure}
 \caption{Unreal Engine/AirSim lunar terrain and rover-driving simulation environment.}
 \label{fig:lunar_simulation_environment}
-\end{figure*}
+\end{figure}
 
 In the FSS simulation, the reference Sun vector is computed from rover position and time, transformed through MCI--MCMF and the fixed landing-site local frame, and expressed in the sensor frame. Angular noise and bias representative of the FSS are added.
 
@@ -643,7 +644,14 @@ Atti \#3 &  -2.00 &  -1.80 & After move \\
 \end{table}
 
 \section{Conclusion}
-This section will be completed after the final quantitative simulation and hardware-test results are confirmed.
+
+This study developed an ESKF-based local navigation system that integrates an INS, a Fine Sun Sensor (FSS), and four-wheel independent-steering odometry for lunar rovers operating without GNSS and under conditions in which vision-based navigation may become unreliable. The nominal INS state is propagated at high rate in a local Cartesian frame under constant-gravity and locally planar assumptions appropriate for short-range, low-speed operation. Asynchronous aiding measurements are then used to bound accumulated errors. The measured three-axis Sun line-of-sight vector is aligned with the ephemeris-based reference vector to form a minimum-rotation correction quaternion, whose minimal-coordinate residual is used as the ESKF attitude observation. The odometry model explicitly represents the four independently steered wheels and therefore supplies velocity and yaw-rate observations during conventional Ackermann motion, zero turns, and wheelbase-adjustment maneuvers.
+
+The Unreal Engine/AirSim study compared only two configurations, INS only and INS + wheel odometry + FSS, using the same reference trajectory and initial conditions. The integrated solution generally followed the reference roll, pitch, and yaw variations and the horizontal velocity and position histories. The FSS quaternion update limited long-term inertial attitude-error accumulation, while wheel odometry constrained planar speed and maintained continuity of short-range position estimation. Transient vertical-velocity and position errors appeared during abrupt terrain-height changes, after which the estimates returned toward the reference trajectory.
+
+The navigation algorithm was implemented in real time on the Jetson Orin Nano/STM32F7 NAVCOM. Full-scale rover tests on artificial lunar regolith demonstrated detection and rejection of wheel-odometry updates contaminated by pits and wheel--terrain impacts, followed by recovery to stable tracking after filter reinitialization. For the runs reported in the tables, the maximum absolute horizontal-position errors were 0.36~m in $x$ and 0.12~m in $y$, and the maximum absolute heading error over zero-turn and post-drive cases was 0.57$^\circ$. These results support the practical operation of the four-wheel odometry model, real-time ESKF implementation, and abnormal-state recovery procedure on the rover platform.
+
+The indoor hardware campaign could not reproduce the parallel illumination and incidence-angle conditions of the Sun, and the FSS update was therefore not activated in the physical rover tests. Consequently, the complete FSS-aided architecture was evaluated in simulation and HILS, whereas the physical experiments verified the wheel--inertial subsystem and real-time NAVCOM implementation. Future work should conduct integrated FSS--INS tests using a calibrated parallel-light solar simulator or direct sunlight, repeat the evaluation over a wider range of Sun elevations and slip conditions with Monte Carlo uncertainty analysis, and extend the model to include lunar curvature, lunar rotation, and position-dependent gravity for long-range traverses. With this additional validation, the proposed architecture can provide a non-visual aiding channel that improves navigation continuity and fault tolerance when vision-based navigation is unavailable or degraded on the lunar surface.
 
 \section*{Acknowledgements}
 % TODO: Add project and funding information.
