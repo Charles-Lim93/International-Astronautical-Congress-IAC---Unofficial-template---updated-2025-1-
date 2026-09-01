@@ -28,8 +28,8 @@ the attribution or this README.
 
 ## Manuscript language versions
 
-- `main.tex`: Korean working manuscript (XeLaTeX)
-- `main_en.tex`: English manuscript (XeLaTeX)
+- `main.tex`: English IAC submission manuscript (XeLaTeX; project default)
+- `main_ko.tex`: Korean working manuscript (XeLaTeX)
 
 In Overleaf, select the desired file under **Menu > Main document**, then recompile.
 

@@ -1,15 +1,7 @@
 % !TeX program = xelatex
 \documentclass[]{IAC_style}
 
-% Korean working-draft configuration. Compile with XeLaTeX.
-\usepackage{kotex}
-\IfFontExistsTF{Noto Serif CJK KR}{
-  \setmainhangulfont{Noto Serif CJK KR}
-  \setsanshangulfont{Noto Sans CJK KR}
-}{
-  \setmainhangulfont{UnBatang}
-  \setsanshangulfont{UnDotum}
-}
+% English manuscript. Compile with XeLaTeX.
 % IAC_style provides the Times-compatible newtx mathematics.
 \usepackage{amsmath}
 \usepackage{enumitem}
@@ -44,43 +36,20 @@
 
 \title{Development and Verification of an Error-State Kalman Filter-Based Multisensor Navigation System for Lunar Rovers}
 
-% Author information from the accepted abstract (Paper ID 108402).
+% Author and affiliation information for Paper ID 108402.
 \IACauthor{Chulsoo Lim}{1}{0}
 \IACauthor{Hyochoong Bang}{2}{1}
 \IACauthoraffiliation{Department of Aerospace Engineering, Korea Advanced Institute of Science and Technology (KAIST), 291 Daehak-ro, Yuseong-gu, Daejeon 34141, Republic of Korea. \normalfont{E-mail:~\authormail{charleslim@kaist.ac.kr}}}
 \IACauthoraffiliation{Department of Aerospace Engineering, Korea Advanced Institute of Science and Technology (KAIST), 291 Daehak-ro, Yuseong-gu, Daejeon 34141, Republic of Korea. \normalfont{E-mail:~\authormail{hcbang@kaist.ac.kr}}}
 
-\abstract{
-Autonomous lunar surface mobility demands high-precision state estimation in the absence of Global
-Navigation Satellite Systems (GNSS). To address this critical guidance, navigation, and control challenge,
-this paper details the development and empirical verification of a robust celestial navigation architecture
-designed specifically for lunar rovers.
-The proposed system fuses an Inertial Navigation System (INS), a Fine Sun Sensor (FSS), and wheel
-odometry. The CMOS-based fine sun sensor captures the three-dimensional Sun vector, which is cross
-referenced with onboard ephemeris data to continuously correct rover heading and attitude. Concurrently,
-wheel odometry is derived from driving motor encoders across a four-wheel independent steering frame
-work. This odometry model explicitly incorporates Ackermann steering dynamics to accurately track
-complex kinematic maneuvers, including zero-turns and wheelbase adaptations.
-The core of the sensor fusion architecture is an Error-State Kalman Filter (ESKF). By estimating
-error states rather than nominal states, and integrating local lunar gravity models, the filter effectively
-bounds long-term inertial drift and ensures superior stability in nonlinear environments.
-The navigation hardware, utilizing a combination of Jetson Orin Nano and STM32 embedded boards,
-underwent a rigorous verification campaign. Initial validation was conducted via Microsoft AirSim and Un
-real Engine, simulating variable solar angles and terrain to confirm filter convergence. Physical Hardware
-in-the-Loop Simulation (HILS) preceded extensive testbed trials. Specifically, autonomous driving and
-suspension control tests were executed in an artificial lunar soil chamber equipped with a helium gravity
-compensation device to evaluate the system’s resilience to high-slip conditions.
-Experimental results demonstrate that the integrated filter successfully derives accurate velocity, posi
-tion, and attitude solutions even during initial slip. Across driving scenarios, the system achieved position
-estimation errors of less than 8% and heading errors below 4%. This multisensor fusion approach provides
-a highly reliable, autonomous navigation framework essential for future lunar surface operations.}
+\abstract{This study proposes an error-state Kalman filter (ESKF)-based local navigation architecture that integrates a Fine Sun Sensor (FSS), an inertial navigation system (INS), and four-wheel independent-steering odometry to support lunar-surface operation when vision-based navigation is degraded or unavailable. The navigation state is propagated in a local Cartesian frame aligned with the initial direction of travel. Constant gravity and a locally planar surface are assumed for short-range, low-speed operation. The proposed algorithm is verified progressively using an Unreal Engine/AirSim simulation environment and hardware experiments with a full-scale rover. A helium-buoyancy gravity-compensation device reduces the effective wheel--terrain normal load during the ground tests to approximately one sixth of its terrestrial value. In the reported hardware runs, the maximum absolute horizontal-position errors were 0.36~m in the $x$ direction and 0.12~m in the $y$ direction, and the maximum absolute heading error was 0.57$^\circ$. The results demonstrate the feasibility of the real-time multisensor navigation framework and its recovery procedure for wheel--terrain disturbances.}
 
 \maketitle
 \thispagestyle{fancy}
 \noindent\textbf{Keywords:} lunar rover navigation; error-state Kalman filter; Fine Sun Sensor; inertial navigation; wheel odometry; multisensor fusion.
 \vspace{1.5ex}
 
-\section*{기호 및 약어}
+\section*{Nomenclature and Abbreviations}
 \begin{tabular}{@{}ll@{}}
 ESKF & Error-State Kalman Filter \\
 FSS & Fine Sun Sensor \\
@@ -89,22 +58,17 @@ IMU & Inertial Measurement Unit \\
 VO & Visual Odometry \\
 \end{tabular}
 
+\section{Introduction}
 
-\section{서론}
+International and commercial interest in lunar exploration has intensified through programs such as Artemis and Commercial Lunar Payload Services. As a result, surface mobility has become a central topic in planetary robotics. Lunar rovers are being developed for cargo transport, scientific exploration, and in-situ resource utilization. Reliable positioning and precise navigation are essential if these systems are to operate autonomously with limited support from Earth.
 
-70년만에 다시 인류가 달에 가는 아르테미스 프로그램, CLPS 같은 상업용 프로그램 등 여러 국가와 민간분야에서 달 탐사에 대한 관심이 높아지고 있다. 최근 월면에 국제적 관심이 다시 높아지면서 월면 위에서의 표면 이동 기술은 행성 로봇 연구의 핵심 과제로 부상하고 있다.
+Unlike terrestrial autonomous vehicles, lunar rovers cannot use GNSS, high-accuracy terrestrial beacons, or a useful planetary magnetic field~\cite{ilyas2016integrated}. State estimation is therefore restricted to a small set of self-contained measurements, including inertial data, celestial observations, and wheel odometry. Their error characteristics must be modeled carefully and fused consistently.
 
-미래의 화물운송, 과학탐사, 현지자원활용(ISRU)등 월면 핵심 임무를 위한 로버 개발 또한 활발하게 진행되고 있다. 로버가 지구의 지원 없이 자율 임무를 수행하기 위해서는 월면에서의 측위와 정밀 항법 시스템이 핵심 요소로 뽑힌다.
+The INS is a core element of a lunar-rover navigation architecture because it provides high-bandwidth attitude, velocity, and position estimates without external infrastructure. When operated alone, however, the integration of bias and noise causes the navigation error to grow without bound. This effect is particularly significant for low-cost MEMS sensors. Periodic correction with at least one absolute, non-diverging measurement is therefore required~\cite{titterton2004strapdown,groves2013principles}.
 
-그러나, 지구의 지상 자율주행 플랫폼과 달리 달 로버는 GNSS 뿐만 아니라 고정밀 비콘, 자기장 등 지구에서 사용가능한 항법 체계를 사용할 수 없다~\cite{ilyas2016integrated}.
+Previous Mars and lunar rovers have addressed this limitation using several aiding sensors. The Mars Exploration Rovers, Mars Science Laboratory, and Perseverance rely strongly on visual odometry (VO) and stereo terrain-relative navigation. The Chang'e/Yutu rovers combine inertial measurements with Sun observations and image-based methods. These missions demonstrate the maturity of vision-based navigation for planetary surface vehicles.
 
-따라서 월면 로버의 상태 추정 문제는 관성 측정, 천체 데이터, 휠 오도메트리 등 소수의 독립형 센서로 한정되며, 각 센서의 오차 특성을 면밀하게 모델링하고 융합해야 한다.
-
-INS는 월면 로버 항법 아키텍처의 핵심 요소가 된다. INS는 외부 인프라에 의존하지 않고 완전히 독립적으로 동작하면서 가속도계와 자이로스코프 측정값으로부터 고대역폭 자세, 속도 및 위치 추정치를 제공한다. 그러나 단독으로 사용할 경우 바이어스와 잡음 항의 적분으로 인해 항법해 오차가 시간에 따라 무한히 증가한다는 잘 알려진 단점이 있으며, 이러한 현상은 행성 로버에 탑재되는 저가 MEMS급 장치에서 특히 심각하다. 따라서 이 드리프트를 제한하려면 적어도 하나의 절대적이고 비발산하는 측정값을 이용한 주기적 보정이 필요하다~\cite{titterton2004strapdown,groves2013principles}.
-
-기존의 화성 및 달 로버는 다양한 보조센서를 이용하여 이 문제를 해결해 왔다. Mars Exploration Rovers, Mars Science Laboratory 및 Perseverance는 모두 주행구간 규모의 측위를 위해 시각 오도메트리(Visual Odometry, VO)와 스테레오 기반 지형상대항법에 크게 의존하였다. 중국의 Chang'e/Yutu 로버는 관성측정값을 태양 관측 및 영상기반 방법과 결합하였다. 이러한 사례는 영상기반 항법이 행성표면 이동체에서 충분히 검증된 실용적인 기술임을 보여준다.
-
-그러나 VO의 성능과 가용성은 관측 장면의 텍스처와 조명조건에 영향을 받는다. 특히 저텍스처 표토, 낮은 태양고도에서 형성되는 긴 그림자, 높은 명암비, 영상센서의 일시적인 성능 저하 또는 제한된 탑재 연산자원은 특징점 검출과 정합의 안정성을 저하시킬 수 있다. 따라서 영상정보에 의존하지 않는 독립적인 항법 보조채널을 확보하는 것은 VO를 대체하기 위한 경쟁적인 접근이라기보다, 항법시스템의 가용성과 고장 허용성을 향상하기 위한 항법 체계에 대한 연구가 필요하다.
+The performance and availability of VO depend on scene texture and illumination. Low-texture regolith, long shadows at low solar elevation, high contrast, temporary camera degradation, and limited onboard computing resources can reduce feature-detection and matching reliability. A navigation aid independent of terrain imagery is therefore valuable as a complementary channel that improves system availability and fault tolerance.
 
 \FloatBarrier
 \begin{table*}[!t]
@@ -130,230 +94,177 @@ Proposed system & Non-visual fallback mode & FSS, IMU, wheel encoders & Sun-vect
 \end{tabularx}
 \end{table*}
 
-이에 대한 대안 또는 보완수단으로 태양벡터 기반 천문항법이 폭넓게 연구되어 왔다. 측정된 태양 시선벡터를 탑재 천체력과 내부 시계로부터 예측한 벡터와 비교하면 로버의 절대 방위각과 경사각을 시간에 따라 발산하지 않는 제한된 오차로 복원할 수 있다~\cite{ilyas2016integrated,rhee2007satellite}. 또한 태양센서는 기계적으로 단순하고 방사선 내성이 있으며 지형조건에 크게 영향을 받지 않으므로 장기간 월면 운용을 위한 보조센서로 적합하다.
+Sun-vector-based celestial navigation has been studied as such an aid. Comparing a measured solar line-of-sight vector with the direction predicted from an onboard ephemeris and clock provides bounded absolute heading and inclination information~\cite{ilyas2016integrated,rhee2007satellite}. A Sun sensor is mechanically simple, radiation tolerant, and largely independent of terrain conditions, making it suitable for long-duration lunar operation.
 
-융합 측면에서 ESKF는 관성, 천체 및 오도메트리 측정값을 결합하는 대표적인 프레임워크이다~\cite{lefferts1982kalman,sola2017quaternion,sveinsson2012insgps,groves2013principles}. ESKF는 비선형으로 전파되는 공칭상태 주위에서 작은 선형화 오차상태를 추적함으로써 쿼터니언 단위노름 제약을 일관되게 다루고, 자세오차와 IMU 바이어스를 최소좌표로 추정할 수 있다. 이러한 오차상태 구성은 절대 보정정보가 간헐적으로 제공되는 달 로버 항법에 적합하다.
+The ESKF is a standard framework for fusing inertial, celestial, and odometric measurements~\cite{lefferts1982kalman,sola2017quaternion,sveinsson2012insgps,groves2013principles}. It tracks a small linearized error state around a nonlinearly propagated nominal state, handles the quaternion unit-norm constraint consistently, and estimates attitude errors and IMU biases in minimal coordinates. These properties are well suited to lunar navigation with intermittent absolute updates.
 
-본 연구는 달 로버 운용에 특화된 ESKF 기반 다중센서 항법시스템을 완전한 하드웨어 수준에서 구현하고 검증하는 것을 목표로 한다. 본 연구의 목적은 제안하는 INS/FSS/휠 오도메트리 결합항법이 태양이 센서의 시야 내에 존재하는 조건에서 VO 업데이트가 일시적으로 불가능하거나 신뢰하기 어려운 상황을 가정하여, FSS에서 측정한 3축 태양벡터로 구성한 쿼터니언 자세 보정값이 INS 자세 드리프트를 제한하고 휠 오도메트리가 단거리 국부 위치추정의 연속성을 유지할 수 있는지를 검증한다.
+This study implements and verifies a complete ESKF-based multisensor navigation system for lunar-rover operation. It evaluates whether a quaternion attitude correction constructed from the measured three-axis FSS Sun vector can bound INS attitude drift and whether wheel odometry can maintain short-range local-position continuity when VO is unavailable or unreliable, provided that the Sun remains within the sensor field of view. The architecture combines an INS, a CMOS-based FSS, and wheel odometry from a four-wheel independent-steering rover in one error-state filter under local-plane and constant-gravity assumptions.
 
-제안 아키텍처는 INS, CMOS 기반 FSS, 4륜 독립조향 구동계에서 얻은 휠 오도메트리를 국부 평면 및 일정 중력 가정에서 동작하는 하나의 오차상태 필터로 융합한다.
-
-본 연구의 주요 기여는 다음과 같다.
+The main contributions are as follows.
 
 \begin{enumerate}[label=(\roman*)]
+\item A non-visual local-navigation architecture for a lunar rover that combines an INS, FSS, and four-wheel independent-steering odometry in a single ESKF. The measured three-axis Sun vector is aligned with its ephemeris prediction to form a minimum-rotation correction quaternion for the attitude update, while wheel odometry estimates short-range velocity and displacement. The rover kinematics support Ackermann steering, zero turns, and independent steering.
 
-\item FSS/INS/4륜 오도메트리 기반 달 로버 국부항법시스템의 제안. 달 표면에서 VO 업데이트가 제한되는 구간의 항법 연속성 확보를 목적으로, INS, Fine Sun Sensor(FSS) 및 4륜 독립조향 오도메트리를 단일 ESKF로 결합한 비영상 국부항법 구조를 제안한다. 제안 시스템은 측정 3축 태양벡터와 천체력 기준 태양벡터를 정렬하여 최소회전 보정 쿼터니언을 구성하고, 이를 ESKF 자세 관측값으로 사용하여 INS 자세 드리프트를 제한한다. 휠 오도메트리는 로버의 단거리 속도와 변위를 추정한다. 또한 Ackermann 주행뿐 아니라 제로턴과 독립조향 상태를 처리할 수 있도록 4륜 독립조향 로버의 운동학적 오도메트리 모델을 구성하였다.
+\item Simulation and real-time implementation of the integrated navigation algorithm. The ESKF is evaluated in a lunar-surface environment based on Microsoft AirSim and Unreal Engine over straight, turning, slope, and composite-route manoeuvres that include wheel-slip intervals. The same algorithm is implemented on a dual-board NAVCOM composed of a Jetson Orin Nano and STM32F7 and checked through PILS and HILS.
 
-\item 통합항법 알고리즘의 시뮬레이션 및 실시간 구현. 제안한 ESKF 항법 알고리즘을 Microsoft AirSim과 Unreal Engine 기반의 달 표면 시뮬레이션 환경에 구현하고, 직진, 회전, 경사로 및 복합경로 주행과 휠 슬립이 포함된 조건에서 항법 성능을 평가하였다. 이후 동일 알고리즘을 Jetson Orin Nano와 STM32F7로 구성된 이중 보드 NAVCOM에 탑재하고, PILS와 HILS를 통하여 센서 입력, 좌표변환, 필터 업데이트 및 실시간 데이터 처리의 일관성을 검증하였다. 시뮬레이션과 HILS에서는 FSS 측정값을 포함한 전체 INS/FSS/휠 오도메트리 결합항법 구조를 평가하였다.
-
-\item 실물 크기 로버를 이용한 휠–관성항법 하위시스템의 실험 검증. 실물 크기 4륜 독립조향 로버와 헬륨 부력식 중력보상장치를 이용하여 약 1/6-g의 휠–지면 하중조건을 모사하고, 인공 월면토에서 실제 주행 및 현가장치 시험을 수행하였다. 실내시험에서는 실제 태양과 동일한 평행광 및 입사각 조건을 재현하기 어려워 FSS 업데이트를 사용하지 않았다. 따라서 실물시험은 전체 FSS 보조항법시스템이 아니라, IMU와 4륜 엔코더를 이용한 휠–관성항법, 로버 운동학 모델 및 실시간 NAVCOM 구현의 성능을 검증하는 데 초점을 두었다. 이를 통해 초기 출발 시 휠 슬립이 발생하는 조건을 포함하여, FSS를 사용할 수 없는 구간에서의 단거리 국부항법 성능을 정량적으로 평가하였다.
-
+\item Experimental verification of the wheel--inertial subsystem using a full-scale four-wheel independent-steering rover and a helium-buoyancy gravity offloading system. Indoor experiments focus on the IMU, wheel encoders, rover kinematics, and real-time NAVCOM implementation because the solar illumination geometry required for an FSS update cannot be reproduced faithfully indoors.
 \end{enumerate}
 
-논문의 구성은 다음과 같다. 2장에서는 전체 항법 아키텍처와 사용 좌표계를 설명한다. 3장에서는 국부 평면 및 일정 중력 가정에 기반한 INS 기계화를 제시한다. 4장과 5장에서는 각각 정밀 태양센서와 Ackermann 오도메트리 측정모델을 전개한다. 6장에서는 상태분해, 오차전파, 측정 업데이트 및 오차주입을 포함하는 ESKF 정식화를 설명한다. 7장에서는 하드웨어 구현을, 8장에서는 검증 절차를, 9장에서는 실험결과와 논의를 제시한다. 마지막으로 10장에서는 연구결과를 요약하고 향후 연구방향을 제안한다.
+Section 2 presents the navigation architecture and reference frames. Section 3 describes the local-frame INS mechanization. Sections 4 and 5 develop the FSS and four-wheel-odometry measurement models. Section 6 formulates the ESKF. Section 7 presents the simulation study, Section 8 presents the hardware tests, and Section 9 concludes the paper.
 
-\section{항법 아키텍처 및 기준좌표계}
+\section{Navigation Architecture and Reference Frames}
 
-\subsection{전체 항법 아키텍처}
+\subsection{Overall Navigation Architecture}
 
-제안 천문항법 시스템의 센서 융합 개요는 Fig.~\ref{fig:navigation_overview}에 나타내었다. 탑재 IMU의 차체좌표계 각속도와 비력을 입력으로 하는 표준 스트랩다운 INS 기계화는 자세, 속도 및 위치를 고속으로 추측항법한다. 두 개의 보조 채널은 절대정보와 고유수용성 정보를 제공한다. 정밀시계 및 탑재 천체력 조회와 결합된 FSS 채널은 센서좌표계의 3축 태양 시선벡터를 차체좌표계로 변환하고, 예측 태양벡터와 정렬하여 보정 쿼터니언을 생성한다. 이 보정값은 ESKF의 자세 관측값으로 입력된다. 휠 인코더는 4륜 독립조향 기구학 모델을 통해 차체좌표계 속도와 요각속도 관측값을 생성한다. ESKF는 공칭 INS 상태의 선형화 오차를 추적하고 보조측정값으로 장기 드리프트를 보정한다. 이후 추정된 오차를 공칭상태에 주입하고 오차상태를 0으로 초기화한다. 이와 함께 휠 속도 및 필터 추종상태를 감시하는 이상상태 감지·복구 채널을 두어, 구덩이 통과나 휠–지면 충격으로 측정값이 정상범위를 벗어나면 해당 측정 업데이트를 차단하고 공분산과 필터 내부상태의 재초기화를 수행한다.
+The sensor-fusion concept is shown in Fig.~\ref{fig:navigation_overview}. A strapdown INS propagates attitude, velocity, and position at high rate using IMU angular-rate and specific-force measurements. The FSS channel transforms the measured three-axis Sun line-of-sight vector into the body frame and aligns it with the direction predicted from the onboard clock and ephemeris. The resulting correction quaternion is supplied to the ESKF as an attitude observation. The wheel encoders provide body-frame velocity and yaw-rate observations through the four-wheel kinematic model. The ESKF tracks the linearized errors of the nominal INS state and uses the aiding measurements to correct long-term drift. A monitoring and recovery channel rejects abnormal wheel measurements and reinitializes filter information when disturbances caused by pits or wheel--terrain impacts exceed the normal range.
 
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=0.96\textwidth]{pics/overview.png}
-\caption{FSS, IMU 및 휠 오도메트리를 결합한 ESKF 기반 항법 시스템 개요.}
+\caption{Overview of the ESKF-based navigation system integrating the FSS, IMU, and wheel odometry.}
 \label{fig:navigation_overview}
 \end{figure*}
 
-INS는 IMU 샘플링 주기에 따라 기본적으로 200 Hz로 동작한다. FSS 업데이트는 비동기적으로 처리되며 유효한 태양 영상이 획득될 때마다, 일반적으로 수 Hz로 실행된다. 휠 인코더 채널은 모터제어기 주기로 동작한다. 비동기 입력은 ESKF 측정 업데이트 단계에서 처리되므로 전파 루프를 변경하지 않고 가장 느린 채널의 주기에 맞춰 호출할 수 있다.
+The INS runs at the 200-Hz IMU sampling rate. FSS updates are processed asynchronously whenever a valid Sun image is acquired, typically at several hertz. Wheel encoders are sampled at the motor-controller rate. Each asynchronous measurement invokes the corresponding ESKF update without changing the high-rate propagation loop.
 
-이러한 고속 전파와 비동기 측정 업데이트를 포함한 세부 소프트웨어 처리 흐름은 Fig.~\ref{fig:navigation_sw_flow}에 나타내었다.
+The detailed software flow, including high-rate propagation and asynchronous measurement updates, is shown in Fig.~\ref{fig:navigation_sw_flow}.
 
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=0.98\textwidth]{pics/architecture.png}
-\caption{다중센서 항법 소프트웨어의 고속 전파 및 비동기 측정 업데이트 흐름.}
+\caption{High-rate propagation and asynchronous measurement-update flow of the multisensor navigation software.}
 \label{fig:navigation_sw_flow}
 \end{figure*}
 
-\subsection{기준좌표계 및 표기법}
+\subsection{Reference Frames and Notation}
 
-본 연구에서는 로버의 저속·단거리 국부주행을 표현하기 위하여 다음과 같은 오른손 직교정규 좌표계를 사용한다.
-
+The following right-handed orthonormal frames are used.
 \begin{itemize}[leftmargin=*]
-
-\item \textbf{차체좌표계 $b$:} IMU 감지축을 원점으로 하는 로버 고정좌표계이다. $x_b$축은 로버 전방, $y_b$축은 우측, $z_b$축은 아래쪽을 향한다.
-
-\item \textbf{국부 항법좌표계 $\ell$:} 시험 시작점에 고정된 국부 직교좌표계이다. $x_\ell$축은 초기 전방, $y_\ell$축은 초기 우측, $z_\ell$축은 국부 연직 하향방향이며, 초기시각에 $C_b^\ell(0)=I$로 둔다.
-
-\item \textbf{태양센서 좌표계 $ss$:} FSS 하우징에 고정되며 $x_{ss}$축은 광축방향을 향한다. 센서좌표계에서 차체좌표계로의 장착정렬은 $C_{ss}^b$로 표현한다.
-
+\item \textbf{Body frame $b$:} rover-fixed frame with its origin at the IMU. The $x_b$-axis points forward, $y_b$ to the right, and $z_b$ downward.
+\item \textbf{Local navigation frame $\ell$:} local Cartesian frame fixed at the test starting point. The $x_\ell$-axis is aligned with the initial forward direction, $y_\ell$ points initially rightward, and $z_\ell$ points downward. Initially, $C_b^\ell(0)=I$.
+\item \textbf{Sun-sensor frame $ss$:} frame fixed to the FSS housing, with $x_{ss}$ along the optical axis. The fixed sensor-to-body mounting alignment is $C_{ss}^b$.
 \end{itemize}
 
-좌표계 사이의 회전은 방향코사인행렬 $C_a^b$ 또는 쿼터니언 $q_a^b$로 나타낸다. $C_a^b$는 좌표계 $a$에서 표현된 벡터를 좌표계 $b$로 변환하며, 좌표계와 자세표현의 기본 표기법은 표준 관성항법 문헌을 따른다~\cite{titterton2004strapdown,groves2013principles}.
-
+A rotation between frames is represented by a direction-cosine matrix $C_a^b$ or quaternion $q_a^b$. The matrix transforms a vector expressed in frame $a$ into frame $b$:
 \begin{equation*}
-v^b=C_a^b v^a
+v^b=C_a^b v^a.
 \end{equation*}
-
-의 관계를 만족한다. 로버의 위치와 속도는 국부 항법좌표계에서
-
+Rover position and velocity in the local frame are
 \begin{equation*}
-p^\ell=\begin{bmatrix}x&y&z\end{bmatrix}^{\top},\qquad v^\ell=\begin{bmatrix}v_x&v_y&v_z\end{bmatrix}^{\top}
+p^\ell=\begin{bmatrix}x&y&z\end{bmatrix}^{\top},\qquad v^\ell=\begin{bmatrix}v_x&v_y&v_z\end{bmatrix}^{\top}.
 \end{equation*}
+The navigation state is relative to the starting point rather than global lunar latitude, longitude, and altitude. MCI and MCMF coordinates are used only to preprocess the reference Sun vector.
 
-으로 표현한다.
+\subsection{Sensor Configuration}
 
-본 연구의 항법상태는 전역 월면 위도·경도·고도가 아니라 시험 시작점에 대한 상대 위치와 자세이다. MCI와 MCMF 좌표는 FSS 기준 태양벡터의 전처리에만 사용하고, ESKF에는 국부 항법좌표계로 변환한 태양방향을 입력한다.
-
-\subsection{센서 구성}
-
-표 1은 시험 플랫폼에 사용된 주요 센서 파라미터를 요약한다. IMU와 모터 엔코더는 로버의 임베디드 항법컴퓨터에 통합되어 있다. FSS는 전진주행 중 하늘 관측범위를 최대화할 수 있도록 광축을 차체 $+x_b$축 방향과 정렬하여 로버 상부 데크에 장착한다. FSS의 장착오차는 고정 회전행렬 $C_{ss}^b$에 포함한다.
+Table~\ref{tab:sensors} summarizes the main sensor parameters. The IMU and motor encoders are integrated with the onboard navigation computer. The FSS is mounted on the upper deck with its optical axis aligned nominally with $+x_b$ to maximize sky visibility. Its mounting error is included in $C_{ss}^b$.
 
 \begin{table}[t]
 \centering
-\caption{시험 플랫폼의 주요 센서 구성.}
+\caption{Main sensor configuration of the test platform.}
 \label{tab:sensors}
 \scriptsize
 \begin{tabularx}{\columnwidth}{p{0.19\columnwidth}p{0.29\columnwidth}X}
 \toprule
-\textbf{센서} & \textbf{파라미터} & \textbf{값} \\
+\textbf{Sensor} & \textbf{Parameter} & \textbf{Value} \\
 \midrule
-IMU & 샘플링 주파수 & 200 Hz \\
- & 자이로 바이어스 & 10 deg/h급 \\
- & 가속도계 바이어스 & 1 mg급 \\
-FSS & 정확도 & 0.2 deg ($2\sigma$) \\
- & 시야각 & 176 deg \\
- & 질량 및 소비전력 & 15 g, 100--174 mW \\
-엔코더 & 구동/조향 채널 & 각 4채널 \\
+IMU & Sampling rate & 200 Hz \\
+ & Gyro bias & 10 deg/h class \\
+ & Accelerometer bias & 1 mg class \\
+FSS & Accuracy & 0.2 deg ($2\sigma$) \\
+ & Field of view & 176 deg \\
+ & Mass and power & 15 g, 100--174 mW \\
+Encoders & Drive/steering channels & Four each \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-\section{국부좌표계 기반 INS 기계화}
+\section{Local-Frame INS Mechanization}
 
-스트랩다운 INS 기계화는 IMU에서 측정한 각속도와 비력을 적분하여 국부 항법좌표계 $\ell$에서 로버의 자세, 속도 및 위치를 전파한다~\cite{titterton2004strapdown,groves2013principles}.
+The strapdown INS integrates IMU angular rate and specific force to propagate rover attitude, velocity, and position in the local frame $\ell$~\cite{titterton2004strapdown,groves2013principles}. The experiments are limited to short-range, low-speed motion. The lunar surface over the test area is approximated as a local plane with constant gravity. Lunar rotation, surface curvature, position-dependent gravity, and transport rate are neglected. This approximation is justified when $L/R_M\ll1$ and the Coriolis acceleration $2\omega_Mv$ is much smaller than the IMU error level.
 
-본 연구에서 수행한 시험은 이동거리와 주행속도가 제한된 단거리·저속 주행에 해당한다. 이에 따라 시험영역의 월면을 하나의 국부 평면으로 근사하고, 주행구간 내에서 중력벡터가 일정하다고 가정한다. 달의 자전, 월면 곡률, 위치에 따른 중력변화 및 국부좌표계의 이동각속도는 모델에 포함하지 않는다.
+\subsection{Constant-Gravity and Local-Plane Assumptions}
 
-이러한 근사는 주행거리 $L$에 대해 $L/R_M\ll1$이고, 달 자전각속도 $\omega_M$와 로버 속도 $v$에 의한 Coriolis 가속도 $2\omega_Mv$가 IMU 오차수준보다 충분히 작다는 조건에 근거한다. 장거리 월면주행으로 확장할 경우에는 달 자전, 월면 곡률 및 위치의존 중력모델을 추가해야 한다.
-
-\subsection{일정 중력 및 국부 평면 가정}
-
-국부 항법좌표계의 $z_\ell$축이 아래쪽을 향하므로 중력벡터는 다음과 같이 정의한다.
-
+Because $z_\ell$ points downward, the gravity vector is
 \begin{equation}
 \tag{1}\label{eq:1}
-g^\ell=\begin{bmatrix}0&0&g_0\end{bmatrix}^{\top}
+g^\ell=\begin{bmatrix}0&0&g_0\end{bmatrix}^{\top}.
 \end{equation}
+Here, $g_0$ is the effective gravitational acceleration used in the test environment. The configured lunar value is used in software simulation, while terrestrial tests compensate gravity according to the actual IMU environment. The helium-buoyancy system changes the effective vertical wheel load but does not transform the terrestrial gravity field acting on the IMU into lunar gravity.
 
-여기서 $g_0$는 해당 시험환경에서 사용하는 유효 중력가속도이다. 소프트웨어 시뮬레이션에서는 설정한 월면 중력값을 사용하고, 지상 시험에서는 실제 IMU 측정환경에 맞춰 중력을 보상한다.
+\subsection{Attitude Kinematics}
 
-주행구간 내에서는 $g_0$의 크기와 방향을 일정하게 유지한다. 따라서 역제곱 반경변화, 위도·경도 의존성, 중력 구배 및 구면조화 중력장 보정항은 고려하지 않는다. 헬륨 부력식 장치는 휠의 유효 수직하중을 조절하지만 IMU에 작용하는 지구 중력장 자체를 달 중력으로 변환하지는 않는다.
-
-\subsection{자세 기구학}
-
-차체좌표계에서 국부 항법좌표계로의 자세는 다음의 단위 쿼터니언으로 표현한다.
-
+The body-to-local attitude is represented by the unit quaternion
 \begin{equation*}
-q_b^\ell=\begin{bmatrix}q_w&q_x&q_y&q_z\end{bmatrix}^{\top}
+q_b^\ell=\begin{bmatrix}q_w&q_x&q_y&q_z\end{bmatrix}^{\top}.
 \end{equation*}
-
-바이어스가 보정된 자이로스코프 각속도는 다음과 같다.
-
+The bias-corrected gyro rate is
 \begin{equation}
 \tag{2}\label{eq:2}
-\hat{\omega}_{\ell b}^b=\omega_m^b-b_g
+\hat{\omega}_{\ell b}^b=\omega_m^b-b_g,
 \end{equation}
-
-여기서 $\omega_m^b$는 자이로스코프 측정값이고 $b_g$는 자이로스코프 바이어스 추정값이다.
-
-국부 항법좌표계는 시험시간 동안 관성공간에 대해 고정된 것으로 근사하므로 달 자전각속도와 이동각속도 보정항은 포함하지 않는다. 자세의 연속시간 기구학은 다음과 같다.
-
+where $\omega_m^b$ is the gyro measurement and $b_g$ is the estimated bias. With the local frame treated as inertially fixed during the test,
 \begin{equation}
 \tag{3}\label{eq:3}
-\dot q_b^\ell=\frac{1}{2}q_b^\ell\otimes\begin{bmatrix}0\\\hat{\omega}_{\ell b}^b\end{bmatrix}
+\dot q_b^\ell=\frac{1}{2}q_b^\ell\otimes\begin{bmatrix}0\\\hat{\omega}_{\ell b}^b\end{bmatrix}.
 \end{equation}
+The symbol $\otimes$ denotes Hamilton quaternion multiplication. The quaternion is normalized after numerical integration.
 
-여기서 $\otimes$는 Hamilton 쿼터니언 곱을 의미한다. 수치적분 이후에는 단위노름 조건을 유지하도록 쿼터니언을 정규화한다.
+\subsection{Velocity Update}
 
-\subsection{속도 갱신}
-
-가속도계 측정값에서 추정 바이어스를 제거한 비력은 다음과 같다.
-
-\begin{equation*}
-\hat f^b=f_m^b-b_a
-\end{equation*}
-
-여기서 $f_m^b$는 차체좌표계에서 측정된 비력이고 $b_a$는 가속도계 바이어스 추정값이다.
-
-비력을 방향코사인행렬 $C_b^\ell$을 이용하여 국부 항법좌표계로 변환하면 속도 미분방정식은 다음과 같다.
-
+The bias-corrected specific force is $\hat f^b=f_m^b-b_a$, where $f_m^b$ is the accelerometer measurement and $b_a$ is the estimated accelerometer bias. The velocity equation is
 \begin{equation}
 \tag{4}\label{eq:4}
-\dot v^\ell=C_b^\ell\left(f_m^b-b_a\right)+g^\ell
+\dot v^\ell=C_b^\ell\left(f_m^b-b_a\right)+g^\ell.
 \end{equation}
+Coriolis and centrifugal acceleration, transport acceleration, and position-dependent gravity are omitted because they are small compared with bias and wheel-slip errors over the test range.
 
-본 연구의 기계화 모델에는 달 자전에 따른 Coriolis 및 원심가속도, 로버 이동에 따른 국부좌표계의 이동가속도, 위치에 따른 중력변화가 포함되지 않는다. 이는 해당 항들의 크기가 본 연구의 단거리·저속 시험조건에서 센서 바이어스와 휠 슬립에 의한 오차보다 충분히 작다는 가정에 근거한다.
+\subsection{Position Update}
 
-\subsection{위치 갱신}
-
-로버의 위치는 위도·경도·고도가 아니라 시험 시작점에 대한 국부 직교좌표로 표현한다. 위치 미분방정식은 다음과 같다.
-
+The local Cartesian position satisfies
 \begin{equation}
 \tag{5}\label{eq:5}
-\dot p^\ell=v^\ell
+\dot p^\ell=v^\ell.
 \end{equation}
-
-IMU 샘플 간격 $\Delta t$ 동안 가속도가 일정하다고 가정하면 위치와 속도는 다음과 같이 이산전파할 수 있다.
-
+Assuming constant acceleration over the IMU interval $\Delta t$,
 \begin{equation*}
-p_{k+1}^\ell=p_k^\ell+v_k^\ell\Delta t+\frac{1}{2}a_k^\ell\Delta t^2
+p_{k+1}^\ell=p_k^\ell+v_k^\ell\Delta t+\frac{1}{2}a_k^\ell\Delta t^2,
 \end{equation*}
-
 \begin{equation*}
-v_{k+1}^\ell=v_k^\ell+a_k^\ell\Delta t
+v_{k+1}^\ell=v_k^\ell+a_k^\ell\Delta t,
 \end{equation*}
-
 \begin{equation*}
-a_k^\ell=C_{b,k}^\ell(f_{m,k}^b-b_{a,k})+g^\ell
+a_k^\ell=C_{b,k}^\ell(f_{m,k}^b-b_{a,k})+g^\ell.
 \end{equation*}
+This representation directly expresses forward, lateral, and vertical displacement in metres, matching the quantities measured in the experiments.
 
-이 국부 Cartesian 표현은 실험에서 측정하는 로버의 전진거리, 횡방향 변위 및 수직변위를 직접 상태변수로 사용하므로, 단거리 시험결과와 항법오차를 미터 단위로 해석하는 데 적합하다.
+\section{Fine-Sun-Sensor-Based Celestial Navigation}
 
-\section{정밀 태양센서 기반 천문항법}
+\subsection{Sensor Operating Principle}
 
-\subsection{센서 동작원리}
+The FSS is a CMOS digital Sun sensor. Parallel sunlight passes through a precision aperture and forms an image on a photodiode array. The onboard algorithm converts the spot centroid from pixel coordinates into a three-dimensional unit Sun line-of-sight vector in the sensor frame~\cite{rhee2007satellite}. Representative specifications are 0.2-deg accuracy ($2\sigma$), a 176-deg field of view, a mass of approximately 15 g, power consumption of 100--174 mW, and radiation tolerance above 24 kRad.
 
-본 연구에서 사용하는 FSS는 CMOS 기반 디지털 태양센서이다. 평행한 태양광이 정밀 개구부(슬릿)를 통과하여 광다이오드 배열에 결상되면, 센서 내 알고리즘이 픽셀좌표로 표현된 광점 중심을 센서좌표계의 3차원 단위 태양 시선벡터로 변환한다~\cite{rhee2007satellite}. 사용 장치의 대표 사양은 정확도 0.2°(2σ), 시야각 176°, 질량 약 15 g, 소비전력 100–174 mW, 방사선 내성 24 kRad 이상이다. 넓은 시야각은 달의 낮 동안 태양이 이동하는 전체 구간에서 가시성을 확보하며, 각도 정확도는 태양벡터에 수직한 자세오차 성분을 임무수준 지향 요구조건 이내로 제한하기에 충분하다.
+The FSS is particularly suitable as an INS aid because its measurement does not diverge with time and is largely insensitive to terrain texture, regolith disturbance, and low-elevation shadows. Its principal operational constraint is that the Sun must remain in the field of view.
 
-두 가지 특성으로 인해 FSS는 달에서 INS를 보조하는 센서로 특히 적합하다. 첫째, 측정값이 본질적으로 비발산한다. 태양방향은 기하학적으로 결정되며 로버의 이전 이동이력에 영향을 받지 않는다. 둘째, FSS는 시각 오도메트리 성능을 저하시키는 지형영향(먼지, 월면토 교란, 낮은 고도의 그림자)에 거의 영향을 받지 않으며, 태양이 센서 시야각 안에 존재해야 한다는 운용조건만 요구한다.
+\placeholderfigure{FSS operating principle and example Sun image.}{FSS concept, sensor photograph, and Sun image to be inserted}
 
+\subsection{Ephemeris-Based Reference Sun Vector}
 
-\subsection{천체력 기준 태양벡터}
-
-$\bar{\mathbf{S}}_{MS}^i(t)$를 탑재시간에서 천체력으로 계산한 MCI 좌표계의 달 중심-태양 단위벡터라고 한다. INS 상태는 전역 LLH 위치를 포함하지 않으므로 착륙지 기준의 고정 MCMF-국부 변환 $C_m^\ell$을 사용한다. 국부좌표계의 예측 태양벡터는 다음과 같다.
-
+Let $\bar{\mathbf{S}}_{MS}^i(t)$ be the Moon-centre-to-Sun unit vector in the MCI frame obtained from the onboard ephemeris. Because the INS state does not include global LLH position, a fixed landing-site MCMF-to-local transformation $C_m^\ell$ is used:
 \begin{equation}
 \tag{7}\label{eq:7}
-\mathbf{S}^{\ell}(t)=C_m^\ell C_i^m(t)\,\bar{\mathbf{S}}_{MS}^i(t)
+\mathbf{S}^{\ell}(t)=C_m^\ell C_i^m(t)\,\bar{\mathbf{S}}_{MS}^i(t).
 \end{equation}
-
-여기서 $C_i^m(t)$는 탑재시간으로 계산한 MCI-MCMF 회전행렬이다. 단거리 시험에서는 로버 이동에 따른 태양 시차가 무시할 수 있을 만큼 작으므로 착륙지 중심의 고정 방향만을 사용한다.
-
-예측 태양벡터는 현재 공칭자세를 이용하여 국부 항법좌표계에서 차체좌표계로 변환한 뒤, 고정 장착행렬 $C_b^{ss}=(C_{ss}^b)^\top$을 이용하여 센서좌표계로 변환한다.
-
+Here, $C_i^m(t)$ is the time-dependent MCI-to-MCMF rotation. Solar parallax due to short-range rover motion is negligible. The predicted vector in the sensor frame is
 \begin{equation}
 \tag{8}\label{eq:8}
-\hat{\mathbf{S}}^b(t)=C_\ell^b(\hat q)\mathbf{S}^{\ell}(t),\qquad \hat{\mathbf{S}}^{ss}(t)=C_b^{ss}\hat{\mathbf{S}}^b(t)
+\hat{\mathbf{S}}^b(t)=C_\ell^b(\hat q)\mathbf{S}^{\ell}(t),\qquad \hat{\mathbf{S}}^{ss}(t)=C_b^{ss}\hat{\mathbf{S}}^b(t).
 \end{equation}
+Equations~\eqref{eq:7} and~\eqref{eq:8} define the predicted sensor- and body-frame vectors compared with the measured three-axis Sun vector. Figure~\ref{fig:ephemeris_variation} shows the reference-vector variation over month, time of day, and rover heading.
 
-식~\eqref{eq:7}과 식~\eqref{eq:8}은 측정 3축 태양벡터와 비교할 센서좌표계 및 차체좌표계의 예측벡터를 구성한다. Fig.~\ref{fig:ephemeris_variation}은 월내 시각, 일내 시각 및 로버 방위각 변화에 따른 기준 태양벡터의 변화를 나타낸다.
+\subsection{Three-Axis Sun Line-of-Sight Measurement}
 
-\subsection{3축 태양 시선벡터 측정}
-
-FSS는 센서좌표계에서 정규화된 3성분 태양 시선벡터 $\mathbf S_k^{ss}=[S_x^{ss},S_y^{ss},S_z^{ss}]^\top$를 출력한다. 측정벡터는 고정 장착행렬 $C_{ss}^b$를 이용하여 차체좌표계로 변환하고 다시 단위노름으로 정규화한다.
-
+The FSS outputs a normalized three-component Sun line-of-sight vector $\mathbf S_k^{ss}=[S_x^{ss},S_y^{ss},S_z^{ss}]^\top$ in the sensor frame. It is transformed to the body frame using the fixed mounting matrix $C_{ss}^b$ and normalized again:
 \begin{equation}
 \tag{9}\label{eq:9}
 \begin{aligned}
@@ -363,20 +274,18 @@ FSS는 센서좌표계에서 정규화된 3성분 태양 시선벡터 $\mathbf S
 {\left\lVert C_{ss}^{b}\mathbf y_k^{\mathrm{LOS}}\right\rVert}.
 \end{aligned}
 \end{equation}
-
-측정잡음 $\mathbf e_{ss,k}$는 FSS 각도 정확도 사양을 3축 벡터공분산으로 전파한 영평균 Gaussian 잡음으로 모델링한다. 센서 시야 밖 측정, 광점중심 추출 실패 및 단위노름 허용범위를 벗어난 측정은 자세 업데이트 전에 제거한다.
+The noise $\mathbf e_{ss,k}$ is modeled as zero-mean Gaussian noise whose three-axis covariance is propagated from the FSS angular-accuracy specification. Measurements outside the field of view, failed spot-centroid solutions, and vectors outside the unit-norm tolerance are rejected before the attitude update.
 
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=\textwidth]{pics/ephemeris.png}
-\caption{3축 태양 시선벡터 측정에 사용되는 기준 태양벡터의 월내 시각, 일내 시각 및 로버의 360$^\circ$ 방위각 변화. 색상은 1월부터 12월까지의 월별 궤적을 나타낸다.}
+\caption{Reference-vector variation used for the three-axis Sun line-of-sight measurement over month, time of day, and a 360$^\circ$ change in rover heading. Colours indicate monthly trajectories from January to December.}
 \label{fig:ephemeris_variation}
 \end{figure*}
 
-\subsection{태양벡터 기반 쿼터니언 자세 보정}
+\subsection{Sun-Vector Quaternion Attitude Correction}
 
-ESKF 자세 보정에는 식~\eqref{eq:8}의 예측 차체 태양벡터 $\hat{\mathbf S}_k^b$를 식~\eqref{eq:9}의 측정벡터 $\mathbf S_{m,k}^b$에 정렬시키는 최소회전 쿼터니언을 사용한다. 두 단위벡터의 외적과 내적을 각각 $\mathbf c_k$와 $d_k$로 정의하면 보정 쿼터니언과 최소좌표 자세잔차는 다음과 같다.
-
+The attitude update uses the minimum-rotation quaternion that aligns the predicted body-frame Sun vector $\hat{\mathbf S}_k^b$ from Eq.~\eqref{eq:8} with the measured vector $\mathbf S_{m,k}^b$ from Eq.~\eqref{eq:9}. Defining their cross and dot products as $\mathbf c_k$ and $d_k$, respectively, gives
 \begin{equation}
 \tag{10}\label{eq:10}
 \begin{aligned}
@@ -389,47 +298,40 @@ ESKF 자세 보정에는 식~\eqref{eq:8}의 예측 차체 태양벡터 $\hat{\m
 \mathbf r_k^{ss}&=2\,\operatorname{sign}(\delta q_{w,k})\,\delta\mathbf q_{v,k}.
 \end{aligned}
 \end{equation}
+For small attitude errors, the vector part of Eq.~\eqref{eq:10} is equivalent to a rotation vector and is therefore used directly as the three-component ESKF attitude residual. The estimated attitude error is converted to a right-multiplicative correction quaternion and injected into the nominal INS quaternion. A single instantaneous Sun direction cannot observe rotation about the Sun vector itself; the valid attitude-observation subspace is therefore the rank-two projector $P_{\perp,k}=I-\hat{\mathbf S}_k^b(\hat{\mathbf S}_k^b)^\top$. The covariance along the Sun-vector axis is inflated, while the remaining degree of freedom is constrained by IMU propagation and the gravity-referenced inclination. Antiparallel geometry with $d_k\simeq-1$ and excessive innovations are excluded by the validity gate.
 
-식~\eqref{eq:10}의 벡터부는 작은 자세오차에서 회전벡터와 일치하므로 ESKF의 3성분 자세오차 관측잔차로 직접 사용할 수 있다. 자세오차 추정값은 right-multiplicative 보정 쿼터니언으로 변환되어 공칭 INS 쿼터니언에 주입된다. 다만 한 시각의 단일 태양방향은 태양벡터 자체를 축으로 하는 회전을 관측할 수 없으므로, 유효 자세관측 부분공간은 $P_{\perp,k}=I-\hat{\mathbf S}_k^b(\hat{\mathbf S}_k^b)^\top$로 표현되는 rank-2 공간이다. 따라서 태양방향 축의 공분산은 크게 설정하고, 나머지 자세 자유도는 IMU 전파와 중력기준 경사정보로 제한한다. 또한 $d_k\simeq-1$인 반대방향 특이조건과 큰 혁신값은 validity gate에서 제외한다.
+\section{Four-Wheel Independent-Steering Ackermann Odometry}
 
-\section{4륜 독립조향 Ackermann 오도메트리}
+The second aiding channel is wheel odometry from the drive and steering encoders. A conventional bicycle model becomes singular or inaccurate during zero turns and small-radius maneuvers. The odometry is therefore formulated directly from the four-wheel independent-steering geometry.
 
-ESKF의 두 번째 보조 채널은 로버 구동 및 조향 인코더에서 얻는 휠 오도메트리 관측값이다. 기존 행성 로버 오도메트리는 하나의 가상 전륜과 하나의 가상 후륜으로 평면운동을 표현하는 자전거/2륜 기구학 모델을 사용한다. 이 모델은 간결하지만 대상 로버가 수행하도록 설계된 제자리 회전과 작은 회전반경 기동에서는 특이해지거나 정확도가 저하된다. 따라서 본 연구에서는 플랫폼의 4륜 독립조향 형상으로부터 직접 오도메트리를 정식화한다.
+\subsection{Four-Wheel Independent-Steering Kinematics}
 
-\subsection{4륜 독립조향 기구학}
-
-Fig.~\ref{fig:odometry_geometry}와 같이 플랫폼은 휠베이스 $L$(전륜-후륜 거리)과 윤거 $2d$(좌측-우측 거리)를 갖는 차체의 네 모서리에 각각 독립적으로 조향할 수 있는 휠을 배치한다. 각 휠의 조향각 $\delta_i$($i \in \{LF, RF, LB, RB\}$)은 독립적으로 명령된다. 기하학적 중심에서 측정한 순간 회전반경 $R$에 대해 Ackermann 조건을 만족하는 후륜축 조향각은 다음과 같다.
-
+As shown in Fig.~\ref{fig:odometry_geometry}, the rover has wheelbase $L$, half-track $d$, and independently steered wheels at the four corners. For instantaneous turning radius $R$, the rear steering angles satisfying the Ackermann condition are
 \begin{equation}
 \tag{11}\label{eq:11}
-\delta_{LB} \;=\; -\arctan\!\Bigl(\dfrac{L}{R - d}\Bigr), \qquad \delta_{RB} \;=\; -\arctan\!\Bigl(\dfrac{L}{R + d}\Bigr),
+\delta_{LB}=-\arctan\!\left(\dfrac{L}{R-d}\right),\qquad \delta_{RB}=-\arctan\!\left(\dfrac{L}{R+d}\right).
 \end{equation}
-
-전륜축에는 부호가 반대인 동일 형식의 두 식이 적용된다. 하위 유도법칙에서 사용하는 로버 유효 조향각은 후륜축 조향각의 평균으로 정의한다.
-
+The front axle uses the corresponding equations with opposite sign. The effective rover steering angle is
 \begin{equation}
 \tag{12}\label{eq:12}
-\delta_{\mathrm{rover}} \;=\; \tfrac{1}{2}\bigl(\delta_{LB} + \delta_{RB}\bigr).
+\delta_{\mathrm{rover}}=\tfrac{1}{2}(\delta_{LB}+\delta_{RB}).
 \end{equation}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{pics/odometry.png}
-\caption{순간회전중심(ICR)을 기준으로 한 4륜 독립조향 Ackermann 기구학과 휠 조향각 정의.}
+\caption{Four-wheel independent-steering Ackermann geometry and wheel-angle definitions about the instantaneous centre of rotation.}
 \label{fig:odometry_geometry}
 \end{figure}
 
-\subsection{속도 및 요각속도 관측}
+\subsection{Velocity and Yaw-Rate Observations}
 
-차체좌표계 속도와 요각속도는 조향 유연성의 영향을 받지 않고 가장 명확한 구름접촉 추정값을 제공하는 두 후륜 구동 인코더로부터 복원한다. 휠 반지름을 $r_w$, 후좌륜과 후우륜의 각속도(rad/s)를 각각 $n_{RL}$과 $n_{RR}$이라 하면 각 휠의 지면속도는 다음과 같다.
-
+The rear drive encoders provide the clearest rolling-contact estimates. With wheel radius $r_w$ and rear-wheel angular rates $n_{RL}$ and $n_{RR}$,
 \begin{equation}
 \tag{13}\label{eq:13}
-v_{RL} \;=\; r_w\, n_{RL}, \qquad v_{RR} \;=\; r_w\, n_{RR},
+v_{RL}=r_wn_{RL},\qquad v_{RR}=r_wn_{RR}.
 \end{equation}
-
-이로부터 차체좌표계 종방향 속도, 요각속도 및 순간회전반경을 다음과 같이 계산한다.
-
+The longitudinal speed, yaw rate, and instantaneous radius are
 \begin{equation}
 \tag{14}\label{eq:14}
 \begin{aligned}
@@ -438,88 +340,69 @@ v_{\mathrm{avg}}&=\tfrac12\bigl(v_{RL}+v_{RR}\bigr),\\
 &R&=\dfrac{v_{\mathrm{avg}}}{\omega_{bz}}.
 \end{aligned}
 \end{equation}
-
-따라서 ESKF에 제공되는 오도메트리 의사측정값은 다음과 같다.
-
+The odometry pseudo-measurement is
 \begin{equation}
 \tag{15}\label{eq:15}
-y_k^{\mathrm{od}} \;=\; \begin{bmatrix} v_{\mathrm{avg}} \\ \omega_{bz} \end{bmatrix} + e_{\mathrm{od},k},
+y_k^{\mathrm{od}}=\begin{bmatrix}v_{\mathrm{avg}}\\\omega_{bz}\end{bmatrix}+e_{\mathrm{od},k}.
 \end{equation}
+It is compared with the longitudinal projection of the nominal body-frame velocity and the gyro-derived body yaw rate. The covariance is increased with locally estimated slip, reducing the weight of odometry during high-slip starts.
 
-필터는 이를 공칭 차체좌표계 속도 $\tilde{V}^b = \tilde{C}_\ell^b\, \tilde{V}^\ell$의 종방향 투영값 및 자이로스코프에서 계산한 차체좌표계 요각속도 성분과 각각 비교한다. $y_k^{\mathrm{od}}$의 잡음은 영평균 Gaussian 잡음으로 모델링하며, 국부적으로 추정된 미끄러짐에 비례하여 공분산을 증가시킨다. 이 방식으로 필터는 미끄러짐이 큰 출발구간에서 휠 오도메트리의 가중치를 낮춘다.
+\subsection{Special Maneuvers: Zero Turn and Wheelbase Adjustment}
 
-\subsection{특이 기동: 제로턴과 휠베이스 조정}
+During a zero turn, all wheels are tangent to a common rotation centre at the body centre. Longitudinal speed is zero while yaw rate is nonzero, so the bicycle-model radius becomes singular. The four-wheel model handles the condition directly with $v_{\mathrm{avg}}=0$ and $\omega_{bz}=(v_{RR}-v_{RL})/(2d)\neq0$. During wheelbase adjustment, temporarily nonparallel front and rear steering commands vary the effective kinematic wheelbase. Because the individual steering angles remain explicit, the observation in Eq.~\eqref{eq:15} remains defined throughout both maneuvers.
 
-자율 월면주행에서 빈번하게 필요한 두 가지 기동은 자전거 모델의 유효범위를 벗어나므로 4륜 모델을 명시적으로 사용해야 한다. 첫 번째는 제자리 제로턴이다. 이때 네 휠의 조향각은 모두 차체 중심에 위치한 공통 회전원의 접선방향을 향하도록 명령된다. 이 형상에서는 종방향 속도는 0이지만 요각속도는 0이 아니므로 자전거 모델의 순간반경 매개화는 특이해진다($R \to 0$). 4륜 모델은 이 경우를 자연스럽게 처리한다. 식 (13)–(14)에서 $v_{\mathrm{avg}} = 0$이고 $\omega_{bz} = (v_{RR} - v_{RL})/(2d) \neq 0$이 되며, ESKF는 이를 순수 요각속도 관측값으로 사용한다.
+\section{Error-State Kalman Filter Formulation}
 
-두 번째 기동은 휠베이스 조정이다. 전륜과 후륜 쌍에 일시적으로 평행하지 않은 조향각을 명령하여 유효 기구학적 휠베이스를 줄이거나 늘림으로써 좁은 지형을 통과한다. 각 휠의 조향각이 식 (11)–(12)에 명시적으로 포함되므로 로버 수준 조향각과 회전반경은 기동 전체에서 계속 정의되며, 식 (15)의 속도-요각속도 관측값도 영향을 받지 않는다. 두 경우는 로버의 전체 운용영역에서 유효한 오도메트리 관측값을 유지하기 위해 4륜 정식화가 필요한 이유를 보여준다.
+The ESKF is the fusion engine of the proposed system. The nominal state is propagated by nonlinear INS mechanization, while the filter estimates the small error between the nominal and true trajectories. Estimated errors from FSS and wheel-odometry updates are injected into the nominal state. A right-multiplicative attitude-error convention is used consistently~\cite{lefferts1982kalman,sola2017quaternion,sveinsson2012insgps}.
 
-\section{오차상태 칼만필터 정식화}
+\subsection{State Decomposition}
 
-오차상태 칼만필터(Error-State Kalman Filter, ESKF)는 제안 항법시스템의 융합엔진이다. 공칭상태는 비선형 INS 기계화로 전파하고, 필터는 공칭궤적과 실제궤적 사이의 작은 오차만을 추정한다. FSS 및 휠 오도메트리 측정으로 추정한 오차는 공칭상태에 주입하며, 주입 직후 오차상태 평균과 공분산의 기준점을 갱신한다. 본 절에서는 자세오차를 공칭 쿼터니언의 오른쪽에 곱하는 right-multiplicative convention을 일관되게 사용한다~\cite{lefferts1982kalman,sola2017quaternion,sveinsson2012insgps}.
-
-\subsection{상태분해}
-
-공칭상태는 위치, 속도, 자세, 가속도계 바이어스 및 자이로스코프 바이어스로 구성한다. 자세는 단위 쿼터니언으로 표현하므로 공칭상태는 16차원이다.
-
+The 16-dimensional nominal state consists of position, velocity, unit-quaternion attitude, accelerometer bias, and gyro bias:
 \begin{equation*}
-\hat{x}=\bigl[(p^\ell)^{\top},(v^\ell)^{\top},(q_b^\ell)^{\top},b_a^{\top},b_g^{\top}\bigr]^{\top}\in\mathbb{R}^{16}
+\hat{x}=\bigl[(p^\ell)^{\top},(v^\ell)^{\top},(q_b^\ell)^{\top},b_a^{\top},b_g^{\top}\bigr]^{\top}\in\mathbb{R}^{16}.
 \end{equation*}
-
-여기서 $p^\ell$과 $v^\ell$은 시험 시작점에 고정된 국부 항법좌표계에서 각각 m와 m/s로 표현한 위치와 속도이다.
-
-실제상태 $x_t$는 일반화 덧셈연산자 $\oplus$를 이용하여 공칭상태 $\hat{x}$와 오차상태 $\delta x$로 분해한다.
-
+The true state $x_t$ is decomposed with the generalized addition operator $\oplus$:
 \begin{equation}
 \tag{16}\label{eq:16}
-x_t \;=\; \hat{x} \oplus \delta x, \qquad \delta x \rightarrow 0 \quad \text{after each injection and reset.}
+x_t=\hat{x}\oplus\delta x,\qquad \delta x\rightarrow0\quad\text{after each injection and reset.}
 \end{equation}
-
-성분별 실제상태와 공칭상태의 관계는 다음과 같다.
-
+The component relations are
 \begin{equation}
 \tag{17}\label{eq:17}
-p_t^\ell=p^\ell+\delta p^\ell,\qquad v_t^\ell=v^\ell+\delta v^\ell,\qquad q_{b,t}^\ell=q_b^\ell\otimes\delta q(\delta\theta)
+p_t^\ell=p^\ell+\delta p^\ell,\qquad v_t^\ell=v^\ell+\delta v^\ell,\qquad q_{b,t}^\ell=q_b^\ell\otimes\delta q(\delta\theta),
 \end{equation}
-
 \begin{equation}
 \tag{18}\label{eq:18}
-b_{a,t} = b_a + \delta b_a, \qquad b_{g,t} = b_g + \delta b_g.
+b_{a,t}=b_a+\delta b_a,\qquad b_{g,t}=b_g+\delta b_g.
 \end{equation}
-
-자세오차는 3성분 회전벡터 $\delta\theta \in \mathbb{R}^3$로 나타내며, 소각도에서 $\delta q(\delta\theta) \simeq [\,1,\ \tfrac{1}{2}\delta\theta^{\top}\,]^{\top}$이다. 필터가 추정하는 15차원 오차상태는 다음과 같다.
-
+The attitude error is the three-component rotation vector $\delta\theta$, and $\delta q(\delta\theta)\simeq[1,\tfrac12\delta\theta^\top]^\top$ for small angles. The 15-dimensional error state is
 \begin{equation}
 \tag{19}\label{eq:19}
-\delta x=\bigl[(\delta p^\ell)^{\top},(\delta v^\ell)^{\top},\delta\theta^{\top},\delta b_a^{\top},\delta b_g^{\top}\bigr]^{\top}\in\mathbb{R}^{15}
+\delta x=\bigl[(\delta p^\ell)^{\top},(\delta v^\ell)^{\top},\delta\theta^{\top},\delta b_a^{\top},\delta b_g^{\top}\bigr]^{\top}\in\mathbb{R}^{15}.
 \end{equation}
+This formulation avoids directly estimating a correction quaternion under a unit-norm constraint.
 
-이 표현은 쿼터니언을 직접 보정상태로 추정할 때 발생하는 단위노름 제약을 피한다. 각 상태의 관측가능성은 사용 가능한 보조측정, 태양방향 및 로버의 기동조건에 따라 달라진다.
+\subsection{Nominal-State Kinematics}
 
-\subsection{공칭상태 기구학}
-
-IMU 측정값을 $f_m^b$와 $\omega_m^b$라 하고, 바이어스가 제거된 비력과 국부좌표계에 대한 차체 각속도를 각각 $\hat f^b=f_m^b-b_a$와 $\hat\omega_{\ell b}^b=\omega_m^b-b_g$로 정의한다. IMU 샘플 간격 $\Delta t$에서 공칭상태는 다음과 같이 전파한다.
-
+Let $\hat f^b=f_m^b-b_a$ and $\hat\omega_{\ell b}^b=\omega_m^b-b_g$. Over an IMU interval $\Delta t$, the nominal state is propagated as
 \begin{equation}
 \tag{20}\label{eq:20}
 \begin{aligned}
-a_k^\ell &= C_b^\ell\hat f_k^b+g^\ell,\\
-p_{k+1}^\ell &=p_k^\ell+v_k^\ell\Delta t
+a_k^\ell&=C_b^\ell\hat f_k^b+g^\ell,\\
+p_{k+1}^\ell&=p_k^\ell+v_k^\ell\Delta t
   +\tfrac12a_k^\ell\Delta t^2,\\
-v_{k+1}^\ell &=v_k^\ell+a_k^\ell\Delta t,\\
+v_{k+1}^\ell&=v_k^\ell+a_k^\ell\Delta t,\\
 q_{b,k+1}^\ell
   &=\operatorname{norm}\!\Bigl(q_{b,k}^\ell\otimes{}\\[-2pt]
   &\qquad \operatorname{Exp}_q(\hat\omega_{\ell b,k}^b\Delta t)\Bigr),\\
 b_{a,k+1}&=b_{a,k},\qquad b_{g,k+1}=b_{g,k}.
 \end{aligned}
 \end{equation}
+Here, $\operatorname{Exp}_q(\cdot)$ maps a rotation vector to a unit quaternion. IMU white noise and bias random walks are represented through the error-state covariance.
 
-여기서 $\operatorname{Exp}_q(\cdot)$는 회전벡터를 단위 쿼터니언으로 변환하는 지수사상이고, $\operatorname{norm}(\cdot)$은 쿼터니언 정규화를 의미한다. 공칭전파에는 잡음의 평균값 0을 사용하며, IMU 백색잡음과 바이어스 랜덤워크는 오차상태 공분산을 통해 반영한다.
+\subsection{Error-State Kinematics}
 
-\subsection{오차상태 기구학}
-
-right-multiplicative 자세오차를 기준으로 공칭궤적 주위에서 1차 선형화한다. 국부 평면과 일정 중력 가정에 따라 달 자전, 이동각속도 및 중력구배 항은 오차상태 모델에 포함하지 않는다.
-
+Linearization about the nominal trajectory using the right-multiplicative error gives
 \begin{equation}
 \tag{21}\label{eq:21}
 \begin{aligned}
@@ -532,20 +415,16 @@ right-multiplicative 자세오차를 기준으로 공칭궤적 주위에서 1차
 \delta\dot b_a&=n_{wa},\qquad\delta\dot b_g=n_{wg}.
 \end{aligned}
 \end{equation}
+Here, $[\cdot]_\times$ is the skew-symmetric cross-product matrix; $n_a$ and $n_g$ are accelerometer and gyro white noise; and $n_{wa}$ and $n_{wg}$ drive the bias random walks.
 
-여기서 $[\cdot]_{\times}$는 반대칭 외적행렬이고, $n_a$와 $n_g$는 각각 가속도계 및 자이로스코프 백색잡음이며, $n_{wa}$와 $n_{wg}$는 바이어스 랜덤워크를 구동하는 백색잡음이다.
+\subsection{Covariance Propagation and Noise Discretization}
 
-\subsection{공분산 전파와 잡음 이산화}
-
-식 (21)은 다음의 연속시간 선형시스템과 이산시간 전파식으로 나타낼 수 있다.
-
+The continuous and discrete error dynamics are
 \begin{equation}
 \tag{22}\label{eq:22}
 \begin{aligned}\delta\dot x&=F_c\delta x+G_cw,\\\delta x_{k+1}&=\Phi_k\delta x_k+w_{d,k},\\\Phi_k&=\exp(F_c\Delta t).\end{aligned}
 \end{equation}
-
-단거리 국부 Cartesian 모델의 상태천이 및 잡음입력 행렬은 다음과 같다.
-
+For the short-range local Cartesian model,
 \begin{equation}
 \tag{23}\label{eq:23}
 \begin{aligned}
@@ -569,52 +448,40 @@ G_c&=
 \end{bmatrix}.
 \end{aligned}
 \end{equation}
-
-$Q_c$를 연속시간 잡음 전력스펙트럼밀도 행렬이라 하면 이산 공정잡음 공분산과 상태공분산 전파는 다음과 같다.
-
+With continuous-time noise power spectral density $Q_c$,
 \begin{equation}
 \tag{24}\label{eq:24}
 \begin{aligned}Q_{d,k}&=\int_0^{\Delta t}\Phi(\tau)G_cQ_cG_c^\top\Phi^\top(\tau)\,d\tau\\&\simeq G_cQ_cG_c^\top\Delta t,\\P_{k+1}^-&=\Phi_kP_k^+\Phi_k^\top+Q_{d,k}.\end{aligned}
 \end{equation}
+For small $\Delta t$, $\Phi_k\simeq I+F_c\Delta t$. No additional $\Delta t$ is applied after $Q_{d,k}$ has been discretized.
 
-작은 $\Delta t$에서는 $\Phi_k \simeq I+F_c\Delta t$를 사용할 수 있다. 이산화된 $Q_{d,k}$를 사용하는 경우 공분산 전파식에서 $\Delta t$를 추가로 곱하지 않는다.
+\subsection{Measurement Update}
 
-\subsection{측정 업데이트}
-
-FSS와 휠 오도메트리 측정은 각각의 비선형 측정함수 $h_j(\hat{x})$를 통해 비동기적으로 처리한다. 측정잔차와 오차상태 Jacobian은 다음과 같다.
-
+FSS and wheel-odometry measurements are processed asynchronously through nonlinear functions $h_j(\hat x)$:
 \begin{equation}
 \tag{25}\label{eq:25}
 \begin{aligned}r_k&=z_k-h_j(\hat x_k^-),\\H_k&=\left.\frac{\partial h_j(\hat x_k^-\oplus\delta x)}{\partial\delta x}\right|_{\delta x=0}.\end{aligned}
 \end{equation}
-
-FSS 업데이트에는 식~\eqref{eq:10}의 쿼터니언 벡터부로 구성한 자세잔차 $\mathbf r_k^{ss}$를 사용한다. 관측 Jacobian의 자세 블록에는 $P_{\perp,k}$를 적용하여 관측 불가능한 태양방향 축이 필터를 과도하게 보정하지 않도록 한다. 전체 공칭상태에 대한 Jacobian $H_x$를 사용하는 경우에는 $H_k=H_xX_\delta$로 계산하며, right-multiplicative 쿼터니언 오차에 대한 mapping은 다음과 같다.
-
+The FSS update uses the attitude residual $\mathbf r_k^{ss}$ formed from the vector part of the correction quaternion in Eq.~\eqref{eq:10}. The attitude block of the measurement Jacobian includes $P_{\perp,k}$ so that the unobservable Sun-axis rotation is not over-corrected. For a Jacobian $H_x$ with respect to the full nominal state, $H_k=H_xX_\delta$, where
 \begin{equation}
 \tag{26}\label{eq:26}
 \begin{aligned}X_\delta&=\operatorname{blkdiag}(I_6,Q_{\delta\theta},I_6),\\Q_{\delta\theta}&=\frac12\begin{bmatrix}-q_v^\top\\q_wI+[q_v]_\times\end{bmatrix},\\q&=[q_w,\ q_v^\top]^\top.\end{aligned}
 \end{equation}
-
-혁신공분산과 Kalman 이득은 다음과 같다.
-
+The innovation covariance and Kalman gain are
 \begin{equation}
 \tag{27}\label{eq:27}
 \begin{aligned}S_k&=H_kP_k^-H_k^\top+R_k,\\K_k&=P_k^-H_k^\top S_k^{-1}.\end{aligned}
 \end{equation}
-
-오차상태 평균과 공분산은 Joseph form으로 갱신한다.
-
+The error-state mean and covariance are updated in Joseph form:
 \begin{equation}
 \tag{28}\label{eq:28}
 \begin{aligned}\delta\hat x_k&=K_kr_k,\\P_k^+&=(I-K_kH_k)P_k^-(I-K_kH_k)^\top+K_kR_kK_k^\top.\end{aligned}
 \end{equation}
+Joseph form helps preserve covariance symmetry and positive semidefiniteness under finite-precision arithmetic.
 
-Joseph form은 유한정밀도 계산에서 공분산의 대칭성과 양의 준정부호를 보존하는 데 유리하다.
+\subsection{Error Injection and Reset}
 
-\subsection{오차주입 및 초기화}
-
-측정 업데이트 이후 추정된 오차를 공칭상태에 주입한다. 자세는 6.1절에서 정의한 right-multiplicative convention에 따라 공칭 쿼터니언의 오른쪽에 곱한다. 주입 후에는 reset Jacobian으로 공분산의 선형화 기준점을 이동하고 오차상태 평균을 0으로 초기화한다.
-
+After each measurement update, the estimated error is injected into the nominal state. With the right-multiplicative convention,
 \begin{equation}
 \tag{29}\label{eq:29}
 \begin{aligned}
@@ -631,14 +498,13 @@ P&\leftarrow G_{\mathrm{reset}}P^+G_{\mathrm{reset}}^\top,
 &\delta\hat x&\leftarrow0.
 \end{aligned}
 \end{equation}
+The corrected nominal state becomes the next linearization point. The quaternion is normalized after each injection, and the bias ordering $[b_a,b_g]$ is kept consistent in the state and covariance~\cite{sola2017quaternion}.
 
-이 과정을 통해 다음 전파단계의 선형화 기준점은 보정된 공칭상태와 일치한다. 구현에서는 매 주입 후 쿼터니언을 정규화하고, 상태벡터와 공분산에서 가속도계 바이어스와 자이로스코프 바이어스의 순서를 $[b_a,\ b_g]$로 동일하게 유지한다~\cite{sola2017quaternion}.
+\section{Simulation}
 
-\section{시뮬레이션}
+The lunar rover environment is implemented using Microsoft AirSim and Unreal Engine. It includes constant lunar gravity, synthetic terrain, four-wheel independent-steering kinematics, and wheel--terrain interaction. IMU, FSS, and encoder sampling, noise, bias, and time synchronization are defined, and the simulated sensor data are supplied to the ESKF. Figure~\ref{fig:lunar_simulation_environment} shows the terrain and rover-driving environment.
 
-Microsoft AirSim과 Unreal Engine을 이용하여 달 표면 로버 주행환경을 구성한다. 시뮬레이션에는 일정한 월면 중력, 인공 월면 지형, 로버의 4륜 독립조향 기구학과 휠–지면 상호작용 모델을 포함한다. IMU, FSS 및 휠 엔코더의 측정주기, 센서 잡음, 바이어스와 시간동기 조건을 정의하고, 시뮬레이션에서 생성된 센서 데이터를 제안한 ESKF에 입력한다. 구성한 월면 지형과 로버 주행환경은 Fig.~\ref{fig:lunar_simulation_environment}에 나타내었다.
-
-시뮬레이션에서는 월면 중력모델을 적용하고 Unreal Engine의 로버 pose를 기준값으로 사용하였다. IMU 기반 INS 전파, FSS 측정 업데이트 및 휠 오도메트리 업데이트의 주기는 각각 200~Hz, 5~Hz 및 20~Hz로 설정하였다. 직진, 회전, 경사로 및 복합경로의 네 가지 주행형태를 수행하였으며, 경로에는 휠 슬립이 발생하는 구간을 포함하였다. IMU 및 FSS의 시뮬레이션 잡음과 바이어스는 Table~\ref{tab:sensors}의 센서 등급 사양을 기준으로 구성하고 두 항법 구성에 동일한 조건을 적용하였다. 초기 공분산 $P_0$, 프로세스잡음 공분산 $Q$ 및 측정잡음 공분산 $R$은 센서 사양에 근거한 대각행렬로 구성하고 두 항법 구성에 동일하게 적용하였다. 소프트웨어 시뮬레이션 후 동일한 센서 입력과 업데이트 경로를 PILS/HILS의 실제 NAVCOM에서 실행하여 좌표변환, 실행주기 및 실시간 데이터 흐름의 일관성을 확인하였다.
+The simulation uses the lunar gravity model and takes the rover pose reported by Unreal Engine as ground truth. The IMU-driven INS propagation, FSS measurement update, and wheel-odometry update operate at 200~Hz, 5~Hz, and 20~Hz, respectively. Four manoeuvre types are exercised: straight driving, turning, slope traversal, and a composite route, with wheel-slip intervals included in the route. The simulated IMU and FSS noise and bias are constructed from the sensor-class specifications in Table~\ref{tab:sensors}, and identical conditions are applied to both navigation configurations. The initial covariance $P_0$, process-noise covariance $Q$, and measurement-noise covariance $R$ are diagonal matrices derived from the sensor specifications and are applied identically to both navigation configurations. After software simulation, the same sensor-input and update paths are executed on the physical NAVCOM through PILS/HILS to verify coordinate transformations, execution cadence, and real-time data flow.
 
 \begin{figure}[t]
 \centering
@@ -653,21 +519,20 @@ Microsoft AirSim과 Unreal Engine을 이용하여 달 표면 로버 주행환경
   \includegraphics[width=\linewidth]{pics/sim_moon_car_crop.png}
   \caption{Rover driving simulation}
 \end{subfigure}
-\caption{Unreal Engine/AirSim 기반 월면 지형 및 로버 주행 시뮬레이션 환경.}
+\caption{Unreal Engine/AirSim lunar terrain and rover-driving simulation environment.}
 \label{fig:lunar_simulation_environment}
 \end{figure}
 
-FSS 시뮬레이션에서는 로버의 위치와 시각에 따른 기준 태양벡터를 천체력으로부터 계산하고, MCI--MCMF 변환과 착륙지 기준의 고정 국부좌표계 변환을 거쳐 센서좌표계의 태양 시선벡터를 생성한다. 이 측정값에는 실제 FSS 성능을 고려한 각도잡음과 바이어스를 추가한다.
+In the FSS simulation, the reference Sun vector is computed from rover position and time, transformed through MCI--MCMF and the fixed landing-site local frame, and expressed in the sensor frame. Angular noise and bias representative of the FSS are added.
 
-\subsection{시뮬레이션 결과}
+\subsection{Simulation Results}
 
-센서 융합에 따른 항법성능 변화를 확인하기 위하여 (i) INS only와 (ii) INS + wheel odometry + FSS의 두 가지 항법 구성만을 비교하였다.
+Only two navigation configurations are compared: (i) INS only and (ii) INS + wheel odometry + FSS.
+The same reference trajectory, initial conditions, and rover commands are applied in both cases. The INS-only case provides the baseline for observing the accumulation of attitude, velocity, and position errors caused by IMU integration. In the integrated case, wheel-odometry velocity observations and the FSS Sun-vector quaternion correction are processed asynchronously while the same nominal INS state is propagated. No separate INS + wheel-odometry-only scenario was simulated. Repeated executions of the identically defined scenarios were used to check implementation repeatability, and the paper presents one representative time history. Ensemble statistics based on the number of repetitions are outside the scope of this study; therefore, the results are not interpreted as a Monte Carlo performance assessment.
 
-두 경우에는 동일한 기준궤적, 초기조건 및 로버 주행명령을 적용하였다. INS-only 경우는 IMU 적분에 의한 자세, 속도 및 위치오차의 누적을 확인하기 위한 기준선으로 사용하였다. 결합항법 경우에는 동일한 공칭 INS 전파에 휠 오도메트리 속도 관측과 FSS 태양벡터 기반 쿼터니언 자세보정을 비동기적으로 적용하였다. 별도의 INS + wheel odometry 단독 시나리오는 수행하지 않았다. 동일하게 정의한 시나리오를 반복 실행하여 구현의 재현성을 확인하였으며, 본문에는 반복 실행 중 하나의 대표 시간이력을 제시한다. 반복횟수에 기반한 앙상블 통계분석은 본 연구범위에 포함하지 않았으므로 Monte Carlo 성능으로 해석하지 않는다.
+Figure~\ref{fig:simulation_navigation_results} presents the attitude, velocity, and position tracking results for the integrated case. The ``INS Result'' label embedded in the plots denotes the nominal INS navigation state after ESKF measurement updates and error injection; it does not denote the unaided INS-only scenario. The INS-only run is used as the unaided comparison baseline.
 
-결합항법 경우의 자세, 속도 및 위치 추종결과를 Fig.~\ref{fig:simulation_navigation_results}에 나타내었다. 그림 내부의 ``INS Result''는 순수 INS-only 시나리오가 아니라, ESKF 보정값이 주입되는 공칭 INS 항법상태를 의미한다. INS-only 시나리오는 보조측정이 없는 비교 기준선으로 사용하였다.
-
-자세결과에서는 roll, pitch 및 yaw 추정값이 기준 자세의 변화와 전반적으로 일치한다. 특히 FSS에서 측정한 3축 태양벡터와 천체력 기준벡터로 구성한 보정 쿼터니언이 ESKF 자세 업데이트에 입력되어 관성 자세오차의 장기 누적을 제한한다. 속도결과에서는 휠 오도메트리 관측이 평면 주행속도를 구속하여 $x$ 및 $y$ 방향 속도 추종성을 유지하며, 수직방향의 급격한 지형변화 구간에서는 일시적인 차이가 나타난 뒤 다시 기준값으로 수렴한다. 위치결과에서도 수평 위치는 기준궤적을 근접하게 추종하고, $z$ 방향은 지형 고도변화와 수직가속도 적분의 영향으로 수평성분보다 상대적으로 큰 과도오차를 보인다.
+The estimated roll, pitch, and yaw generally follow the reference attitude variations. The correction quaternion formed from the measured three-axis Sun vector and the ephemeris-based reference vector is supplied to the ESKF attitude update, thereby limiting long-term inertial attitude-error accumulation. The wheel-odometry observation constrains planar speed and maintains tracking of the $x$- and $y$-velocity components. Short transient differences appear in the vertical component during abrupt terrain changes, after which the estimate returns toward the reference. The horizontal position components also closely follow the reference trajectory, whereas the vertical position exhibits comparatively larger transient errors because it depends on terrain-height variation and integrated vertical acceleration.
 
 \begin{figure}[H]
 \centering
@@ -688,46 +553,44 @@ FSS 시뮬레이션에서는 로버의 위치와 시각에 따른 기준 태양�
   \includegraphics[width=\linewidth]{pics/position.png}
   \caption{Three-axis position components}
 \end{subfigure}
-\caption{INS + wheel odometry + FSS 결합항법 시뮬레이션의 기준값과 보정된 공칭 INS 자세, 속도 및 위치 추종결과. 그림 범례의 ``INS Result''는 ESKF 측정 업데이트와 오차주입이 반영된 항법상태를 의미한다.}
+\caption{Reference and corrected nominal-INS attitude, velocity, and position histories for the INS + wheel odometry + FSS simulation. ``INS Result'' in the embedded plot legends denotes the navigation state after ESKF measurement updates and error injection.}
 \label{fig:simulation_navigation_results}
 \end{figure}
 
 \begin{figure*}[!t]
 \centering
 \input{pics/hw_architecture.tex}
-\caption{실물 로버 하드웨어 시험에 사용한 센서 입력 및 NAVCOM 기반 항법처리 구성.}
+\caption{Sensor interfaces and NAVCOM-based navigation hardware architecture of the full-scale rover. The platform uses one FSS and four drive-encoder and steering-angle channels, one for each wheel.}
 \label{fig:hw_architecture}
 \end{figure*}
 
-\section{하드웨어 시험}
+\section{Hardware Tests}
 
-제안 알고리즘의 실시간 구현과 실제 로버 적용 가능성을 평가하기 위하여 실물 크기 4륜 독립조향 로버를 이용한다. 로버에는 Jetson Orin Nano와 STM32F7 기반 NAVCOM, IMU, 4개의 휠 엔코더 및 조향각 측정장치를 탑재하며, 전체 하드웨어 구성은 Fig.~\ref{fig:hw_architecture}에 나타내었다.
+A full-scale four-wheel independent-steering rover is used to evaluate real-time implementation and practical applicability. The rover carries a Jetson Orin Nano/STM32F7 NAVCOM, an IMU, four wheel encoders, and steering-angle sensors, as shown in Fig.~\ref{fig:hw_architecture}. The STM32F7 collects encoder, steering, and low-level drivetrain data; the Jetson performs time synchronization, four-wheel odometry, and real-time ESKF navigation.
 
-STM32F7은 엔코더, 조향장치 및 저수준 구동계 데이터를 수집하고, Jetson Orin Nano는 센서 시간동기, 4륜 오도메트리 계산과 ESKF 항법을 실시간으로 수행한다.
+To emulate reduced lunar gravity during ground tests, the rover was connected to a helium-buoyancy gravity-compensation device. The device supported approximately $5/6$ of the rover weight upward, reducing the effective normal load at the wheel--terrain contacts to about $1/6$ of its terrestrial value. This arrangement enabled hardware-level evaluation of wheel sinkage and slip under a lunar-representative normal-load condition. The rover inertia remained unchanged; therefore, the apparatus reproduced gravity-dependent loading rather than the complete six-degree-of-freedom lunar dynamics.
 
-또한 지상에서 월면의 저중력 조건을 모사하기 위해 로버에 헬륨 부력식 중력보상장치를 연결하였다. 이 장치는 로버 중량의 약 $5/6$을 상방에서 지지하여 휠--지면 접촉부에 작용하는 유효 수직하중을 지구 중력 조건의 약 $1/6$로 감소시킨다. 이를 통해 인공 월면토 주행에서 저중력 정상하중이 휠 침하와 슬립에 미치는 영향을 하드웨어 수준에서 평가하였다. 다만 로버의 관성질량은 변하지 않으므로, 본 장치는 월면의 전체 6자유도 동역학이 아니라 중력에 따른 정상하중을 모사한다.
-
-\subsection{이상상태 감지 및 복구 재초기화}
+\subsection{Abnormal-State Detection and Recovery Reinitialization}
 \label{sec:recovery_reinitialization}
 
-인공 월면토에서 구덩이, 장애물 또는 순간적인 휠--지면 충격이 발생하면 휠 접촉상태가 급변하여 엔코더 기반 속도 관측값과 필터 추종상태가 정상 운용범위를 벗어날 수 있다. 이에 따라 하드웨어 구현에는 휠 오도메트리 속도와 필터 추종상태를 주기적으로 감시하는 감독 계층을 추가하였다. 추종상태가 사전에 설정한 임계범위를 벗어나면 해당 구간을 이상상태로 판정하고, 오염된 휠 오도메트리 측정의 업데이트를 일시적으로 차단한다. 동시에 오차상태 평균을 0으로 되돌리고 공분산과 필터 내부정보를 초기 운용조건에 맞게 재설정한다. 센서 측정값과 추정상태가 정상범위로 복귀하면 휠 오도메트리 업데이트를 재개한다.
+During runs on the artificial lunar regolith, pits, obstacles, and transient wheel--terrain impacts can abruptly change wheel contact and drive the encoder-derived velocity observations and filter-tracking states outside their normal operating ranges. The hardware implementation therefore includes a supervisory layer that continuously monitors the wheel-odometry velocity and the corresponding filter states. When a predefined threshold is exceeded, the interval is classified as abnormal and the contaminated wheel-odometry update is temporarily rejected. The error-state mean is returned to zero, while the covariance and internal filter information are restored to their initial operating conditions. Wheel-odometry updates resume after the measurements and estimated states return to the normal range.
 
-이 복구 재초기화는 식~\eqref{eq:29}에서 매 측정 업데이트 후 수행하는 통상적인 오차주입 및 영점 초기화와 구분되는 하드웨어 시험단계의 고장대응 절차이다. 큰 외란으로 손상된 추정값이 이후의 위치 및 자세 추정으로 장시간 전파되는 것을 방지하는 데 목적이 있으며, 시스템 수준의 고장모드, 영향 및 완화조치 분류에는 FMECA 절차를 참고하였다~\cite{borgovini1993fmeca}.
+This recovery reinitialization is a hardware-test fault-response procedure distinct from the routine error injection and zero reset performed after each measurement update in Eq.~\eqref{eq:29}. Its purpose is to prevent a gross disturbance from propagating into subsequent position and attitude estimates; the system-level classification of failure modes, effects, and mitigation actions follows FMECA practice~\cite{borgovini1993fmeca}.
 
-\subsection{하드웨어 실험 결과}
+\subsection{Hardware Experimental Results}
 
-하드웨어 주행시험에서는 Sec.~\ref{sec:recovery_reinitialization}의 복구 재초기화 기능을 활성화하였다. 인공 월면토의 구덩이와 장애물을 통과할 때 발생한 속도 외란을 이상상태로 검출한 뒤, 오염된 휠 오도메트리 업데이트를 차단하고 필터를 재초기화하여 정상 추종상태로 복귀하는지를 확인하였다.
+The recovery-reinitialization function described in Sec.~\ref{sec:recovery_reinitialization} was activated during the hardware runs. The experiment verified that velocity disturbances generated while traversing pits and obstacles were detected as abnormal, the contaminated wheel-odometry updates were rejected, and the filter returned to stable tracking after reinitialization.
 
-Fig.~\ref{fig:filter_reinitialization}은 구덩이 및 휠--지면 외란으로 속도 추정값이 정상범위를 벗어난 구간과 재초기화 이후 정상 추종상태로 복귀하는 과정을 나타낸다. 전체 시간이력과 확대 구간을 함께 제시하여 외란 검출 전후의 속도 추정 변화를 비교하였다.
+Figure~\ref{fig:filter_reinitialization} shows the interval in which pit and wheel--terrain disturbances drive the estimated speed outside the normal range and the subsequent return to stable tracking after reinitialization. The complete time history and the enlarged interval are shown together to compare the estimated velocity before and after recovery.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{pics/filter_reinit.png}
-\caption{구덩이 및 휠–지면 외란에 의해 속도 추정값이 정상범위를 벗어난 구간의 감지와 필터 재초기화 결과. 확대 패널은 복구절차 전후의 속도 추정 변화를 나타낸다.}
+\caption{Detection and filter reinitialization when pit and wheel--terrain disturbances drive the velocity estimate outside its normal range. Insets show the estimate before and after recovery.}
 \label{fig:filter_reinitialization}
 \end{figure}
 
-레이저 거리측정값을 기준으로 한 위치추정 결과와 수동으로 계측한 방향각 결과를 각각 Table~\ref{tab:position_results}과 Table~\ref{tab:heading_results}에 정리하였다. MD 및 AD 주행시험에서 추정 위치는 실측값과 전반적으로 일치하였으며, 제로턴 및 주행 후 방향각 시험에서도 추정값이 기준값을 추종하였다.
+Position estimates are compared with laser-range measurements, and heading estimates are compared with manually surveyed values in Tables~\ref{tab:position_results} and~\ref{tab:heading_results}. The results show general agreement for MD and AD drives and for zero-turn and post-drive heading tests.
 
 \begin{table}[H]
 \centering
@@ -767,18 +630,18 @@ Atti \#3 &  -2.00 &  -1.80 & After move \\
 \end{table}
 
 \FloatBarrier
-\section{결론}
+\section{Conclusion}
 
-본 연구에서는 GNSS를 사용할 수 없고 영상기반 항법의 가용성이 조명과 지형조건에 따라 저하될 수 있는 월면 로버를 대상으로, INS, 정밀 태양센서(FSS) 및 4륜 독립조향 휠 오도메트리를 결합한 ESKF 기반 국부항법시스템을 제안하였다. 제안 시스템은 단거리·저속 주행에 적합한 국부 Cartesian 좌표계와 일정 중력 가정에서 공칭 INS 상태를 고속으로 전파하고, 비동기 보조측정을 이용하여 누적오차를 보정한다. FSS의 3축 태양 시선벡터는 탑재 천체력으로 계산한 기준 태양벡터와 정렬되어 최소회전 보정 쿼터니언을 구성하며, 이 쿼터니언의 최소좌표 잔차를 ESKF 자세 관측값으로 사용한다. 휠 오도메트리는 4륜 독립조향 형상을 직접 반영하여 일반 Ackermann 주행뿐 아니라 제로턴과 휠베이스 조정 중에도 속도와 요각속도 관측값을 제공한다.
+This study developed an ESKF-based local navigation system that integrates an INS, a Fine Sun Sensor (FSS), and four-wheel independent-steering odometry for lunar rovers operating without GNSS and under conditions in which vision-based navigation may become unreliable. The nominal INS state is propagated at high rate in a local Cartesian frame under constant-gravity and locally planar assumptions appropriate for short-range, low-speed operation. Asynchronous aiding measurements are then used to bound accumulated errors. The measured three-axis Sun line-of-sight vector is aligned with the ephemeris-based reference vector to form a minimum-rotation correction quaternion, whose minimal-coordinate residual is used as the ESKF attitude observation. The odometry model explicitly represents the four independently steered wheels and therefore supplies velocity and yaw-rate observations during conventional Ackermann motion, zero turns, and wheelbase-adjustment maneuvers.
 
-Unreal Engine/AirSim 시뮬레이션에서는 INS only와 INS + wheel odometry + FSS의 두 구성을 동일한 기준궤적과 초기조건에서 비교하였다. 결합항법 결과는 roll, pitch 및 yaw 자세변화와 수평 속도·위치 기준값을 전반적으로 추종하였으며, FSS 쿼터니언 업데이트가 관성 자세오차의 장기 누적을 제한하고 휠 오도메트리가 평면 주행속도와 단거리 위치추정의 연속성을 보조함을 확인하였다. 급격한 지형 고도변화 구간에서는 수직 속도와 위치에 과도오차가 나타났으나 이후 기준궤적으로 다시 수렴하였다.
+The Unreal Engine/AirSim study compared only two configurations, INS only and INS + wheel odometry + FSS, using the same reference trajectory and initial conditions. The integrated solution generally followed the reference roll, pitch, and yaw variations and the horizontal velocity and position histories. The FSS quaternion update limited long-term inertial attitude-error accumulation, while wheel odometry constrained planar speed and maintained continuity of short-range position estimation. Transient vertical-velocity and position errors appeared during abrupt terrain-height changes, after which the estimates returned toward the reference trajectory.
 
-제안 알고리즘은 Jetson Orin Nano와 STM32F7로 구성된 NAVCOM에 실시간 구현하였다. 실물 크기 4륜 독립조향 로버를 이용한 하드웨어 시험에서는 헬륨 부력식 중력보상장치로 유효 수직하중을 지구 중력 조건의 약 $1/6$로 낮추고 인공 월면토를 주행하였다. 이 시험에서 구덩이와 휠--지면 충격에 의해 오염된 휠 오도메트리 업데이트를 감지·차단하고 필터를 재초기화한 뒤 정상 추종상태로 복귀하는 것을 확인하였다. 표에 제시된 시험에서 수평 위치의 최대 절대오차는 $x$ 방향 0.36~m, $y$ 방향 0.12~m였으며, 제로턴과 주행 후 방향각의 최대 절대오차는 0.57$^\circ$였다. 이 결과는 제안한 4륜 오도메트리, 실시간 ESKF 구현 및 이상상태 복구절차가 실제 로버 플랫폼에서 유효하게 동작함을 보여준다.
+The navigation algorithm was implemented in real time on the Jetson Orin Nano/STM32F7 NAVCOM. During the full-scale rover trials, a helium-buoyancy gravity-compensation device reduced the effective normal load to approximately one sixth of its terrestrial value while the rover traversed artificial lunar regolith. The tests demonstrated detection and rejection of wheel-odometry updates contaminated by pits and wheel--terrain impacts, followed by recovery to stable tracking after filter reinitialization. For the runs reported in the tables, the maximum absolute horizontal-position errors were 0.36~m in $x$ and 0.12~m in $y$, and the maximum absolute heading error over zero-turn and post-drive cases was 0.57$^\circ$. These results support the practical operation of the four-wheel odometry model, real-time ESKF implementation, and abnormal-state recovery procedure on the rover platform.
 
-다만 실내 실물시험에서는 실제 태양과 동일한 평행광 및 입사각 조건을 재현하기 어려워 FSS 업데이트를 사용하지 않았다. 따라서 FSS를 포함한 전체 결합항법 성능은 시뮬레이션과 HILS에서 검증하였고, 실물시험은 휠--관성항법 하위시스템과 NAVCOM 실시간 구현의 검증에 해당한다. 향후에는 평행광 태양 모사장치 또는 실제 태양광을 이용한 FSS--INS 결합시험, 다양한 태양고도와 휠 슬립 조건에 대한 반복·Monte Carlo 평가, 그리고 장거리 주행을 위한 월면 곡률, 달 자전 및 위치의존 중력모델의 확장이 필요하다. 이러한 검증을 통해 제안 구조는 영상항법이 제한되는 월면 구간에서 항법 연속성과 고장 허용성을 제공하는 비영상 보조항법 채널로 발전할 수 있다.
+The indoor hardware campaign could not reproduce the parallel illumination and incidence-angle conditions of the Sun, and the FSS update was therefore not activated in the physical rover tests. Consequently, the complete FSS-aided architecture was evaluated in simulation and HILS, whereas the physical experiments verified the wheel--inertial subsystem and real-time NAVCOM implementation. Future work should conduct integrated FSS--INS tests using a calibrated parallel-light solar simulator or direct sunlight, repeat the evaluation over a wider range of Sun elevations and slip conditions with Monte Carlo uncertainty analysis, and extend the model to include lunar curvature, lunar rotation, and position-dependent gravity for long-range traverses. With this additional validation, the proposed architecture can provide a non-visual aiding channel that improves navigation continuity and fault tolerance when vision-based navigation is unavailable or degraded on the lunar surface.
 
-\section*{감사의 글}
-% TODO: 연구과제 및 지원기관 정보를 입력한다.
+\section*{Acknowledgements}
+% TODO: Add project and funding information.
 
 \bibliography{biblio}
 
