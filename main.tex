@@ -17,6 +17,7 @@
 \usepackage{array}
 \usepackage{microtype}
 \usepackage{placeins}
+\usepackage{float}
 \graphicspath{{pics/}{pics/docx/}}
 
 \newcommand{\imageplaceholder}[2][3.1cm]{%
@@ -690,7 +691,7 @@ FSS 시뮬레이션에서는 로버의 위치와 시각에 따른 기준 태양�
 \end{subfigure}
 \caption{INS + wheel odometry + FSS 결합항법 시뮬레이션의 기준값과 보정된 공칭 INS 자세, 속도 및 위치 추종결과. 그림 범례의 ``INS Result''는 ESKF 측정 업데이트와 오차주입이 반영된 항법상태를 의미한다.}
 \label{fig:simulation_navigation_results}
-\end{figure*}
+\end{figure}
 
 \FloatBarrier
 
@@ -705,7 +706,7 @@ STM32F7은 엔코더, 조향장치 및 저수준 구동계 데이터를 수집�
 \includegraphics[width=0.98\textwidth]{pics/hw_architecture.png}
 \caption{시뮬레이션 검증에 사용한 센서 입력 및 NAVCOM 기반 항법처리 구성.}
 \label{fig:hw_architecture}
-\end{figure}
+\end{figure*}
 \FloatBarrier
 
 
@@ -731,7 +732,7 @@ Fig.~\ref{fig:filter_reinitialization}은 구덩이 및 휠--지면 외란으로
 
 레이저 거리측정값을 기준으로 한 위치추정 결과와 수동으로 계측한 방향각 결과를 각각 Table~\ref{tab:position_results}과 Table~\ref{tab:heading_results}에 정리하였다. MD 및 AD 주행시험에서 추정 위치는 실측값과 전반적으로 일치하였으며, 제로턴 및 주행 후 방향각 시험에서도 추정값이 기준값을 추종하였다.
 
-\begin{table}[t]
+\begin{table}[H]
 \centering
 \caption{Position estimation results from the indoor rover experiments. All values are in metres.}
 \label{tab:position_results}
