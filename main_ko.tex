@@ -12,6 +12,8 @@
 }
 % IAC_style provides the Times-compatible newtx mathematics.
 \usepackage{amsmath}
+% Use one consistent row spacing for all multi-line display equations.
+\setlength{\jot}{4pt}
 \usepackage{enumitem}
 \usepackage{subcaption}
 \usepackage{array}
@@ -307,17 +309,18 @@ q_b^\ell=\begin{bmatrix}q_w&q_x&q_y&q_z\end{bmatrix}^{\top}
 
 IMU 샘플 간격 $\Delta t$ 동안 가속도가 일정하다고 가정하면 위치와 속도는 다음과 같이 이산전파할 수 있다.
 
-\begin{equation*}
-p_{k+1}^\ell=p_k^\ell+v_k^\ell\Delta t+\frac{1}{2}a_k^\ell\Delta t^2
-\end{equation*}
-
-\begin{equation*}
-v_{k+1}^\ell=v_k^\ell+a_k^\ell\Delta t
-\end{equation*}
-
-\begin{equation*}
-a_k^\ell=C_{b,k}^\ell(f_{m,k}^b-b_{a,k})+g^\ell
-\end{equation*}
+\begin{equation}
+\tag{6}\label{eq:6}
+\begin{aligned}
+p_{k+1}^\ell
+  &=p_k^\ell+v_k^\ell\Delta t
+    +\tfrac{1}{2}a_k^\ell\Delta t^2,\\
+v_{k+1}^\ell
+  &=v_k^\ell+a_k^\ell\Delta t,\\
+a_k^\ell
+  &=C_{b,k}^\ell(f_{m,k}^b-b_{a,k})+g^\ell.
+\end{aligned}
+\end{equation}
 
 이 국부 Cartesian 표현은 실험에서 측정하는 로버의 전진거리, 횡방향 변위 및 수직변위를 직접 상태변수로 사용하므로, 단거리 시험결과와 항법오차를 미터 단위로 해석하는 데 적합하다.
 
@@ -380,13 +383,17 @@ ESKF 자세 보정에는 식~\eqref{eq:8}의 예측 차체 태양벡터 $\hat{\m
 \begin{equation}
 \tag{10}\label{eq:10}
 \begin{aligned}
-\mathbf c_k&=\hat{\mathbf S}_k^b\times\mathbf S_{m,k}^b,
-&d_k&=(\hat{\mathbf S}_k^b)^\top\mathbf S_{m,k}^b,\\
-\delta q_{ss,k}&=
-\frac{1}{\sqrt{2(1+d_k)}}
-\begin{bmatrix}1+d_k\\ \mathbf c_k\end{bmatrix}
-=\begin{bmatrix}\delta q_{w,k}\\ \delta\mathbf q_{v,k}\end{bmatrix},\\
-\mathbf r_k^{ss}&=2\,\operatorname{sign}(\delta q_{w,k})\,\delta\mathbf q_{v,k}.
+\mathbf c_k
+  &=\hat{\mathbf S}_k^b\times\mathbf S_{m,k}^b,\\
+d_k
+  &=(\hat{\mathbf S}_k^b)^\top\mathbf S_{m,k}^b,\\
+\delta q_{ss,k}
+  &=\frac{1}{\sqrt{2(1+d_k)}}
+    \begin{bmatrix}1+d_k\\ \mathbf c_k\end{bmatrix},\\
+  &=\begin{bmatrix}\delta q_{w,k}\\ \delta\mathbf q_{v,k}\end{bmatrix},\\
+\mathbf r_k^{ss}
+  &=2\,\operatorname{sign}(\delta q_{w,k})\,
+    \delta\mathbf q_{v,k}.
 \end{aligned}
 \end{equation}
 
@@ -434,8 +441,8 @@ v_{RL} \;=\; r_w\, n_{RL}, \qquad v_{RR} \;=\; r_w\, n_{RR},
 \tag{14}\label{eq:14}
 \begin{aligned}
 v_{\mathrm{avg}}&=\tfrac12\bigl(v_{RL}+v_{RR}\bigr),\\
-\omega_{bz}&=\dfrac{v_{RR}-v_{RL}}{2d},
-&R&=\dfrac{v_{\mathrm{avg}}}{\omega_{bz}}.
+\omega_{bz}&=\dfrac{v_{RR}-v_{RL}}{2d},\\
+R&=\dfrac{v_{\mathrm{avg}}}{\omega_{bz}}.
 \end{aligned}
 \end{equation}
 
@@ -507,10 +514,14 @@ a_k^\ell &= C_b^\ell\hat f_k^b+g^\ell,\\
 p_{k+1}^\ell &=p_k^\ell+v_k^\ell\Delta t
   +\tfrac12a_k^\ell\Delta t^2,\\
 v_{k+1}^\ell &=v_k^\ell+a_k^\ell\Delta t,\\
+\Delta q_k
+  &=\operatorname{Exp}_q\!\left(
+    \hat\omega_{\ell b,k}^b\Delta t\right),\\
 q_{b,k+1}^\ell
-  &=\operatorname{norm}\!\Bigl(q_{b,k}^\ell\otimes{}\\[-2pt]
-  &\qquad \operatorname{Exp}_q(\hat\omega_{\ell b,k}^b\Delta t)\Bigr),\\
-b_{a,k+1}&=b_{a,k},\qquad b_{g,k+1}=b_{g,k}.
+  &=\operatorname{norm}\!\left(
+    q_{b,k}^\ell\otimes\Delta q_k\right),\\
+b_{a,k+1}&=b_{a,k},\\
+b_{g,k+1}&=b_{g,k}.
 \end{aligned}
 \end{equation}
 
@@ -526,10 +537,11 @@ right-multiplicative 자세오차를 기준으로 공칭궤적 주위에서 1차
 \delta\dot p^\ell&=\delta v^\ell,\\
 \delta\dot v^\ell
   &=-C_b^\ell[\hat f^b]_\times\delta\theta-C_b^\ell\delta b_a\\
-  &\qquad{}-C_b^\ell n_a,\\
+  &\quad{}-C_b^\ell n_a,\\
 \delta\dot\theta
   &=-[\hat\omega_{\ell b}^b]_\times\delta\theta-\delta b_g-n_g,\\
-\delta\dot b_a&=n_{wa},\qquad\delta\dot b_g=n_{wg}.
+\delta\dot b_a&=n_{wa},\\
+\delta\dot b_g&=n_{wg}.
 \end{aligned}
 \end{equation}
 
@@ -606,7 +618,12 @@ FSS 업데이트에는 식~\eqref{eq:10}의 쿼터니언 벡터부로 구성한 
 
 \begin{equation}
 \tag{28}\label{eq:28}
-\begin{aligned}\delta\hat x_k&=K_kr_k,\\P_k^+&=(I-K_kH_k)P_k^-(I-K_kH_k)^\top+K_kR_kK_k^\top.\end{aligned}
+\begin{aligned}
+\delta\hat x_k&=K_kr_k,\\
+P_k^+
+  &=(I-K_kH_k)P_k^-(I-K_kH_k)^\top\\
+  &\quad{}+K_kR_kK_k^\top.
+\end{aligned}
 \end{equation}
 
 Joseph form은 유한정밀도 계산에서 공분산의 대칭성과 양의 준정부호를 보존하는 데 유리하다.

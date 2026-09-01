@@ -4,6 +4,8 @@
 % English manuscript. Compile with XeLaTeX.
 % IAC_style provides the Times-compatible newtx mathematics.
 \usepackage{amsmath}
+% Use one consistent row spacing for all multi-line display equations.
+\setlength{\jot}{4pt}
 \usepackage{enumitem}
 \usepackage{subcaption}
 \usepackage{array}
@@ -227,15 +229,18 @@ The local Cartesian position satisfies
 \dot p^\ell=v^\ell.
 \end{equation}
 Assuming constant acceleration over the IMU interval $\Delta t$,
-\begin{equation*}
-p_{k+1}^\ell=p_k^\ell+v_k^\ell\Delta t+\frac{1}{2}a_k^\ell\Delta t^2,
-\end{equation*}
-\begin{equation*}
-v_{k+1}^\ell=v_k^\ell+a_k^\ell\Delta t,
-\end{equation*}
-\begin{equation*}
-a_k^\ell=C_{b,k}^\ell(f_{m,k}^b-b_{a,k})+g^\ell.
-\end{equation*}
+\begin{equation}
+\tag{6}\label{eq:6}
+\begin{aligned}
+p_{k+1}^\ell
+  &=p_k^\ell+v_k^\ell\Delta t
+    +\tfrac{1}{2}a_k^\ell\Delta t^2,\\
+v_{k+1}^\ell
+  &=v_k^\ell+a_k^\ell\Delta t,\\
+a_k^\ell
+  &=C_{b,k}^\ell(f_{m,k}^b-b_{a,k})+g^\ell.
+\end{aligned}
+\end{equation}
 This representation directly expresses forward, lateral, and vertical displacement in metres, matching the quantities measured in the experiments.
 
 \section{Fine-Sun-Sensor-Based Celestial Navigation}
@@ -289,13 +294,17 @@ The attitude update uses the minimum-rotation quaternion that aligns the predict
 \begin{equation}
 \tag{10}\label{eq:10}
 \begin{aligned}
-\mathbf c_k&=\hat{\mathbf S}_k^b\times\mathbf S_{m,k}^b,
-&d_k&=(\hat{\mathbf S}_k^b)^\top\mathbf S_{m,k}^b,\\
-\delta q_{ss,k}&=
-\frac{1}{\sqrt{2(1+d_k)}}
-\begin{bmatrix}1+d_k\\ \mathbf c_k\end{bmatrix}
-=\begin{bmatrix}\delta q_{w,k}\\ \delta\mathbf q_{v,k}\end{bmatrix},\\
-\mathbf r_k^{ss}&=2\,\operatorname{sign}(\delta q_{w,k})\,\delta\mathbf q_{v,k}.
+\mathbf c_k
+  &=\hat{\mathbf S}_k^b\times\mathbf S_{m,k}^b,\\
+d_k
+  &=(\hat{\mathbf S}_k^b)^\top\mathbf S_{m,k}^b,\\
+\delta q_{ss,k}
+  &=\frac{1}{\sqrt{2(1+d_k)}}
+    \begin{bmatrix}1+d_k\\ \mathbf c_k\end{bmatrix},\\
+  &=\begin{bmatrix}\delta q_{w,k}\\ \delta\mathbf q_{v,k}\end{bmatrix},\\
+\mathbf r_k^{ss}
+  &=2\,\operatorname{sign}(\delta q_{w,k})\,
+    \delta\mathbf q_{v,k}.
 \end{aligned}
 \end{equation}
 For small attitude errors, the vector part of Eq.~\eqref{eq:10} is equivalent to a rotation vector and is therefore used directly as the three-component ESKF attitude residual. The estimated attitude error is converted to a right-multiplicative correction quaternion and injected into the nominal INS quaternion. A single instantaneous Sun direction cannot observe rotation about the Sun vector itself; the valid attitude-observation subspace is therefore the rank-two projector $P_{\perp,k}=I-\hat{\mathbf S}_k^b(\hat{\mathbf S}_k^b)^\top$. The covariance along the Sun-vector axis is inflated, while the remaining degree of freedom is constrained by IMU propagation and the gravity-referenced inclination. Antiparallel geometry with $d_k\simeq-1$ and excessive innovations are excluded by the validity gate.
@@ -336,8 +345,8 @@ The longitudinal speed, yaw rate, and instantaneous radius are
 \tag{14}\label{eq:14}
 \begin{aligned}
 v_{\mathrm{avg}}&=\tfrac12\bigl(v_{RL}+v_{RR}\bigr),\\
-\omega_{bz}&=\dfrac{v_{RR}-v_{RL}}{2d},
-&R&=\dfrac{v_{\mathrm{avg}}}{\omega_{bz}}.
+\omega_{bz}&=\dfrac{v_{RR}-v_{RL}}{2d},\\
+R&=\dfrac{v_{\mathrm{avg}}}{\omega_{bz}}.
 \end{aligned}
 \end{equation}
 The odometry pseudo-measurement is
@@ -392,13 +401,17 @@ a_k^\ell&=C_b^\ell\hat f_k^b+g^\ell,\\
 p_{k+1}^\ell&=p_k^\ell+v_k^\ell\Delta t
   +\tfrac12a_k^\ell\Delta t^2,\\
 v_{k+1}^\ell&=v_k^\ell+a_k^\ell\Delta t,\\
+\Delta q_k
+  &=\operatorname{Exp}_q\!\left(
+    \hat\omega_{\ell b,k}^b\Delta t\right),\\
 q_{b,k+1}^\ell
-  &=\operatorname{norm}\!\Bigl(q_{b,k}^\ell\otimes{}\\[-2pt]
-  &\qquad \operatorname{Exp}_q(\hat\omega_{\ell b,k}^b\Delta t)\Bigr),\\
-b_{a,k+1}&=b_{a,k},\qquad b_{g,k+1}=b_{g,k}.
+  &=\operatorname{norm}\!\left(
+    q_{b,k}^\ell\otimes\Delta q_k\right),\\
+b_{a,k+1}&=b_{a,k},\\
+b_{g,k+1}&=b_{g,k}.
 \end{aligned}
 \end{equation}
-Here, $\operatorname{Exp}_q(\cdot)$ maps a rotation vector to a unit quaternion. IMU white noise and bias random walks are represented through the error-state covariance.
+Here, $\operatorname{Exp}_q(\cdot)$ maps a rotation vector to the incremental unit quaternion $\Delta q_k$. IMU white noise and bias random walks are represented through the error-state covariance.
 
 \subsection{Error-State Kinematics}
 
@@ -409,10 +422,11 @@ Linearization about the nominal trajectory using the right-multiplicative error 
 \delta\dot p^\ell&=\delta v^\ell,\\
 \delta\dot v^\ell
   &=-C_b^\ell[\hat f^b]_\times\delta\theta-C_b^\ell\delta b_a\\
-  &\qquad{}-C_b^\ell n_a,\\
+  &\quad{}-C_b^\ell n_a,\\
 \delta\dot\theta
   &=-[\hat\omega_{\ell b}^b]_\times\delta\theta-\delta b_g-n_g,\\
-\delta\dot b_a&=n_{wa},\qquad\delta\dot b_g=n_{wg}.
+\delta\dot b_a&=n_{wa},\\
+\delta\dot b_g&=n_{wg}.
 \end{aligned}
 \end{equation}
 Here, $[\cdot]_\times$ is the skew-symmetric cross-product matrix; $n_a$ and $n_g$ are accelerometer and gyro white noise; and $n_{wa}$ and $n_{wg}$ drive the bias random walks.
@@ -475,7 +489,12 @@ The innovation covariance and Kalman gain are
 The error-state mean and covariance are updated in Joseph form:
 \begin{equation}
 \tag{28}\label{eq:28}
-\begin{aligned}\delta\hat x_k&=K_kr_k,\\P_k^+&=(I-K_kH_k)P_k^-(I-K_kH_k)^\top+K_kR_kK_k^\top.\end{aligned}
+\begin{aligned}
+\delta\hat x_k&=K_kr_k,\\
+P_k^+
+  &=(I-K_kH_k)P_k^-(I-K_kH_k)^\top\\
+  &\quad{}+K_kR_kK_k^\top.
+\end{aligned}
 \end{equation}
 Joseph form helps preserve covariance symmetry and positive semidefiniteness under finite-precision arithmetic.
 
