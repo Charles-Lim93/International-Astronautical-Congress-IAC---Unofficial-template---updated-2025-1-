@@ -525,21 +525,13 @@ Only the following two navigation configurations are compared:
 \item INS only,
 \item INS + wheel odometry + FSS.
 \end{itemize}
-The same reference trajectory, initial conditions, and rover commands are applied in both cases. The INS-only case provides the baseline for observing the accumulation of attitude, velocity, and position errors caused by IMU integration. In the integrated case, wheel-odometry velocity observations and the FSS Sun-vector quaternion correction are processed asynchronously while the same nominal INS state is propagated. No separate INS + wheel-odometry-only scenario was simulated. Figure~\ref{fig:hw_architecture} shows the sensor inputs and NAVCOM-based navigation-processing flow used for the simulation verification.
-
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=0.98\textwidth]{pics/hw_architecture.png}
-\caption{Sensor inputs and NAVCOM-based navigation-processing configuration used for the simulation verification.}
-\label{fig:hw_architecture}
-\end{figure*}
-\FloatBarrier
+The same reference trajectory, initial conditions, and rover commands are applied in both cases. The INS-only case provides the baseline for observing the accumulation of attitude, velocity, and position errors caused by IMU integration. In the integrated case, wheel-odometry velocity observations and the FSS Sun-vector quaternion correction are processed asynchronously while the same nominal INS state is propagated. No separate INS + wheel-odometry-only scenario was simulated.
 
 Figure~\ref{fig:simulation_navigation_results} presents the attitude, velocity, and position tracking results for the integrated case. The ``INS Result'' label embedded in the plots denotes the nominal INS navigation state after ESKF measurement updates and error injection; it does not denote the unaided INS-only scenario. The INS-only run is used as the unaided comparison baseline.
 
 The estimated roll, pitch, and yaw generally follow the reference attitude variations. The correction quaternion formed from the measured three-axis Sun vector and the ephemeris-based reference vector is supplied to the ESKF attitude update, thereby limiting long-term inertial attitude-error accumulation. The wheel-odometry observation constrains planar speed and maintains tracking of the $x$- and $y$-velocity components. Short transient differences appear in the vertical component during abrupt terrain changes, after which the estimate returns toward the reference. The horizontal position components also closely follow the reference trajectory, whereas the vertical position exhibits comparatively larger transient errors because it depends on terrain-height variation and integrated vertical acceleration.
 
-\begin{figure}[t]
+\begin{figure}[H]
 \centering
 \begin{subfigure}[t]{0.98\linewidth}
   \centering
@@ -562,11 +554,16 @@ The estimated roll, pitch, and yaw generally follow the reference attitude varia
 \label{fig:simulation_navigation_results}
 \end{figure}
 
-\FloatBarrier
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.98\textwidth]{pics/hw_architecture.png}
+\caption{Sensor inputs and NAVCOM-based navigation-processing hardware configuration of the full-scale rover.}
+\label{fig:hw_architecture}
+\end{figure*}
 
 \section{Hardware Tests}
 
-A full-scale four-wheel independent-steering rover is used to evaluate real-time implementation and practical applicability. The rover carries a Jetson Orin Nano/STM32F7 NAVCOM, an IMU, four wheel encoders, and steering-angle sensors. The STM32F7 collects encoder, steering, and low-level drivetrain data; the Jetson performs time synchronization, four-wheel odometry, and real-time ESKF navigation.
+A full-scale four-wheel independent-steering rover is used to evaluate real-time implementation and practical applicability. The rover carries a Jetson Orin Nano/STM32F7 NAVCOM, an IMU, four wheel encoders, and steering-angle sensors, as shown in Fig.~\ref{fig:hw_architecture}. The STM32F7 collects encoder, steering, and low-level drivetrain data; the Jetson performs time synchronization, four-wheel odometry, and real-time ESKF navigation.
 
 \begin{figure*}[t]
 \centering
