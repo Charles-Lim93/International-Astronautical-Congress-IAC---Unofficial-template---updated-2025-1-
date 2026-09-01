@@ -98,7 +98,7 @@ The main contributions are as follows.
 \begin{enumerate}[label=(\roman*)]
 \item A non-visual local-navigation architecture for a lunar rover that combines an INS, FSS, and four-wheel independent-steering odometry in a single ESKF. The measured three-axis Sun vector is aligned with its ephemeris prediction to form a minimum-rotation correction quaternion for the attitude update, while wheel odometry estimates short-range velocity and displacement. The rover kinematics support Ackermann steering, zero turns, and independent steering.
 
-\item Simulation and real-time implementation of the integrated navigation algorithm. The ESKF is evaluated in a lunar-surface environment based on Microsoft AirSim and Unreal Engine under nominal driving, turning, wheel-slip, and VO-outage conditions. The same algorithm is implemented on a dual-board NAVCOM composed of a Jetson Orin Nano and STM32F7 and checked through PILS and HILS.
+\item Simulation and real-time implementation of the integrated navigation algorithm. The ESKF is evaluated in a lunar-surface environment based on Microsoft AirSim and Unreal Engine over straight, turning, slope, and composite-route manoeuvres that include wheel-slip intervals. The same algorithm is implemented on a dual-board NAVCOM composed of a Jetson Orin Nano and STM32F7 and checked through PILS and HILS.
 
 \item Experimental verification of the wheel--inertial subsystem using a full-scale four-wheel independent-steering rover and a helium-buoyancy gravity offloading system. Indoor experiments focus on the IMU, wheel encoders, rover kinematics, and real-time NAVCOM implementation because the solar illumination geometry required for an FSS update cannot be reproduced faithfully indoors.
 \end{enumerate}
@@ -499,6 +499,8 @@ The corrected nominal state becomes the next linearization point. The quaternion
 
 The lunar rover environment is implemented using Microsoft AirSim and Unreal Engine. It includes constant lunar gravity, synthetic terrain, four-wheel independent-steering kinematics, and wheel--terrain interaction. IMU, FSS, and encoder sampling, noise, bias, and time synchronization are defined, and the simulated sensor data are supplied to the ESKF. Figure~\ref{fig:lunar_simulation_environment} shows the terrain and rover-driving environment.
 
+The simulation uses the lunar gravity model and takes the rover pose reported by Unreal Engine as ground truth. The IMU-driven INS propagation, FSS measurement update, and wheel-odometry update operate at 200~Hz, 5~Hz, and 20~Hz, respectively. Four manoeuvre types are exercised: straight driving, turning, slope traversal, and a composite route, with wheel-slip intervals included in the route. The simulated IMU and FSS noise and bias are constructed from the sensor-class specifications in Table~\ref{tab:sensors}, and identical conditions are applied to both navigation configurations. The initial covariance $P_0$, process-noise covariance $Q$, and measurement-noise covariance $R$ are diagonal matrices derived from the sensor specifications and are applied identically to both navigation configurations. After software simulation, the same sensor-input and update paths are executed on the physical NAVCOM through PILS/HILS to verify coordinate transformations, execution cadence, and real-time data flow.
+
 \begin{figure}[t]
 \centering
 \begin{subfigure}[t]{0.98\linewidth}
@@ -525,7 +527,7 @@ Only the following two navigation configurations are compared:
 \item INS only,
 \item INS + wheel odometry + FSS.
 \end{itemize}
-The same reference trajectory, initial conditions, and rover commands are applied in both cases. The INS-only case provides the baseline for observing the accumulation of attitude, velocity, and position errors caused by IMU integration. In the integrated case, wheel-odometry velocity observations and the FSS Sun-vector quaternion correction are processed asynchronously while the same nominal INS state is propagated. No separate INS + wheel-odometry-only scenario was simulated.
+The same reference trajectory, initial conditions, and rover commands are applied in both cases. The INS-only case provides the baseline for observing the accumulation of attitude, velocity, and position errors caused by IMU integration. In the integrated case, wheel-odometry velocity observations and the FSS Sun-vector quaternion correction are processed asynchronously while the same nominal INS state is propagated. No separate INS + wheel-odometry-only scenario was simulated. Repeated executions of the identically defined scenarios were used to check implementation repeatability, and the paper presents one representative time history. Ensemble statistics based on the number of repetitions are outside the scope of this study; therefore, the results are not interpreted as a Monte Carlo performance assessment.
 
 Figure~\ref{fig:simulation_navigation_results} presents the attitude, velocity, and position tracking results for the integrated case. The ``INS Result'' label embedded in the plots denotes the nominal INS navigation state after ESKF measurement updates and error injection; it does not denote the unaided INS-only scenario. The INS-only run is used as the unaided comparison baseline.
 
