@@ -38,11 +38,32 @@
 
 \title{Development and Verification of an Error-State Kalman Filter-Based Multisensor Navigation System for Lunar Rovers}
 
-% Author and affiliation information for Paper ID 108402.
-\IACauthor{Chulsoo Lim}{1}{0}
-\IACauthor{Hyochoong Bang}{2}{1}
+% Author and affiliation information from the KSAS 2025 Fall Conference paper.
+\IACauthor{Chulsoo Lim}{1}{1}
+\IACauthor{Hosun Lee}{1}{0}
+\IACauthor{Soohyeok Choi}{2}{0}
+\IACauthor{Dongyoung Kwon}{3}{0}
+\IACauthor{Sunwook Kim}{3}{0}
+\IACauthor{Kicheol Jeong}{3}{0}
+\IACauthor{Hyomin Jin}{3}{0}
+\IACauthor{Kyudong Kim}{3}{0}
+\IACauthor{Hyeonil Lee}{3}{0}
+\IACauthor{Youngseok Lee}{3}{0}
+\IACauthor{Gihan Noh}{3}{0}
+\IACauthor{Hyungsic Park}{4}{0}
+\IACauthor{Mangyu Lee}{4}{0}
+\IACauthor{Shinkyu Kang}{4}{0}
+\IACauthor{Junhwi Cho}{4}{0}
+\IACauthor{Changseop Ahn}{4}{0}
+\IACauthor{Kwangwoo Jang}{1}{0}
+\IACauthor{Junwoo Park}{1}{0}
+\IACauthor{Hohyeong Lee}{1}{0}
+\IACauthor{Yujin Lee}{1}{0}
+\IACauthor{Hyo-Choong Bang}{1}{0}
 \IACauthoraffiliation{Department of Aerospace Engineering, Korea Advanced Institute of Science and Technology (KAIST), 291 Daehak-ro, Yuseong-gu, Daejeon 34141, Republic of Korea. \normalfont{E-mail:~\authormail{charleslim@kaist.ac.kr}}}
-\IACauthoraffiliation{Department of Aerospace Engineering, Korea Advanced Institute of Science and Technology (KAIST), 291 Daehak-ro, Yuseong-gu, Daejeon 34141, Republic of Korea. \normalfont{E-mail:~\authormail{hcbang@kaist.ac.kr}}}
+\IACauthoraffiliation{Nmotion, Incheon, Republic of Korea.}
+\IACauthoraffiliation{Korea Automotive Technology Institute (KATECH), Cheonan 31214, Republic of Korea.}
+\IACauthoraffiliation{Hyundai Motor Company, Seoul 06797, Republic of Korea.}
 
 \abstract{This study proposes an error-state Kalman filter (ESKF)-based local navigation architecture that integrates a Fine Sun Sensor (FSS), an inertial navigation system (INS), and four-wheel independent-steering odometry to support lunar surface operations when vision-based navigation is degraded or unavailable. The navigation state is propagated in a local Cartesian frame aligned with the initial direction of travel. Constant gravity and a locally planar surface are assumed for short-range, low-speed operation. The proposed algorithm is verified progressively using a Microsoft AirSim/Unreal Engine simulation environment and hardware experiments with a full-scale rover. A helium-buoyancy gravity-compensation device reduces the effective wheel--terrain normal load during the ground tests to approximately one sixth of its terrestrial value. In the reported hardware runs, the maximum absolute horizontal position errors were 0.36~m in the $x$ direction and 0.12~m in the $y$ direction, and the maximum absolute heading error was 0.57$^\circ$. The results demonstrate the feasibility of the real-time multisensor navigation framework and its recovery procedure for wheel--terrain disturbances.}
 
