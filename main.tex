@@ -31,9 +31,9 @@
 
 \IACpaperyear{2026}
 \IACpapernumber{IAC-26-C1.5.6.x108402}
-\IACconference{77th International Astronautical Congress}
+\IACconference{77th International Astronautical Congress (IAC 2026)}
 \IAClocation{Antalya, T\"urkiye}
-\IACdate{5--9 October 2026}
+\IACdate{5--9 Oct 2026}
 \IACcopyrightA{}
 
 \title{Development and Verification of an Error-State Kalman Filter-Based Multisensor Navigation System for Lunar Rovers}
@@ -66,11 +66,10 @@
 \IACauthoraffiliation{Hyundai Motor Company, Seoul 06797, Republic of Korea.}
 
 \abstract{This study proposes an error-state Kalman filter (ESKF)-based local navigation architecture that integrates a Fine Sun Sensor (FSS), an inertial navigation system (INS), and four-wheel independent-steering odometry to support lunar surface operations when vision-based navigation is degraded or unavailable. The navigation state is propagated in a local Cartesian frame aligned with the initial direction of travel. Constant gravity and a locally planar surface are assumed for short-range, low-speed operation. The proposed algorithm is verified progressively using a Microsoft AirSim/Unreal Engine simulation environment and hardware experiments with a full-scale rover. A helium-buoyancy gravity-compensation device reduces the effective wheel--terrain normal load during the ground tests to approximately one sixth of its terrestrial value. In the reported hardware runs, the maximum absolute horizontal position errors were 0.36~m in the $x$ direction and 0.12~m in the $y$ direction, and the maximum absolute heading error was 0.57$^\circ$. The results demonstrate the feasibility of the real-time multisensor navigation framework and its recovery procedure for wheel--terrain disturbances.}
+\IACkeywords{lunar rover navigation; error-state Kalman filter; Fine Sun Sensor; inertial navigation; wheel odometry; multisensor fusion.}
 
 \maketitle
 \thispagestyle{fancy}
-\noindent\textbf{Keywords:} lunar rover navigation; error-state Kalman filter; Fine Sun Sensor; inertial navigation; wheel odometry; multisensor fusion.
-\vspace{1.5ex}
 
 \section*{Nomenclature and Abbreviations}
 \begin{tabular}{@{}ll@{}}
@@ -679,7 +678,7 @@ Atti \#3 &  -2.00 &  -1.80 & After move \\
 \end{table}
 
 \FloatBarrier
-\section{Conclusion}
+\section{Conclusions}
 
 This study developed an ESKF-based local navigation system that integrates an INS, a Fine Sun Sensor (FSS), and four-wheel independent-steering odometry for lunar rovers operating without GNSS and under conditions in which vision-based navigation may become unreliable. The nominal INS state is propagated at high rate in a local Cartesian frame under constant-gravity and locally planar assumptions appropriate for short-range, low-speed operation. Asynchronous aiding measurements are then used to bound accumulated errors. The measured three-axis Sun line-of-sight vector is aligned with the ephemeris-based reference vector to form a minimum-rotation correction quaternion, whose minimal-coordinate residual is used as the ESKF attitude observation. The odometry model explicitly represents the four independently steered wheels and therefore supplies velocity and yaw-rate observations during conventional Ackermann motion, zero turns, and wheelbase-adjustment maneuvers.
 

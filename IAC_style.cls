@@ -16,7 +16,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{IAC_style}[International Astronautical Congress conference paper LaTeX class]
 
-\LoadClass[twocolumn,letter paper,10pt]{article}
+\LoadClass[twocolumn,letterpaper,10pt]{article}
 \setlength\parskip{0pt} % no spacing at double return carriage
 
 %-----------------------------------------------------
@@ -45,8 +45,9 @@
 %-----------------------------------------------------
 %% ------------ APPEARANCE ---------------------------
 % Document setup
-\RequirePackage[margin=2.25cm,top=3.35cm,bottom=3.35cm,headheight=18pt]{geometry} % page layout
-\setlength{\columnsep}{0.8cm} % column spacing
+% IAC 2026 Word template: 2.50 cm margins and 335 twip (0.591 cm) column spacing.
+\RequirePackage[margin=2.50cm,headheight=18pt]{geometry} % page layout
+\setlength{\columnsep}{0.591cm} % column spacing
 % Times-compatible text with the original IAC/newtx math appearance.
 \RequirePackage{iftex}
 \ifPDFTeX
@@ -64,7 +65,7 @@
 
 % Captions
 \RequirePackage[]{caption}
-\captionsetup[figure]{name=Fig.,format=hang,indention=-20pt}
+\captionsetup[figure]{name=Fig.,format=hang,indention=-20pt,labelsep=period}
 %\captionsetup[table]{format=hang,indention=-24pt}
 
 % Sections style
@@ -96,10 +97,11 @@
 	\csdef{iac@affiliation\theaffiliationcount}{#1}%
 	}%
 
-\setlength\parindent{12pt}
+% The official Word template uses a 0.50 cm first-line indent.
+\setlength\parindent{0.50cm}
 \RequirePackage[]{caption}
-\captionsetup[figure]{name=Fig.,format=hang,indention=-20pt}
-\captionsetup[table]{format=hang,indention=-24pt}
+\captionsetup[figure]{name=Fig.,format=hang,indention=-20pt,labelsep=period}
+\captionsetup[table]{format=hang,indention=-24pt,labelsep=period,justification=raggedright,singlelinecheck=false}
 
 \titlespacing{\section}{0pt}{*3}{*1.5}
 \titlespacing{\subsection}{0pt}{*2.5}{*0.5}
@@ -109,6 +111,7 @@
 \titleformat{\subsubsection}{\normalfont}{}{0pt}{\uline{#1}}
 
 \renewcommand{\abstract}[1]{\def\iac@abstract{#1}}
+\newcommand*{\IACkeywords}[1]{\def\iac@keywords{#1}}\IACkeywords{}
 \newcommand*{\IACpaperyear}[1]{\def\iac@paperyear{#1}}\IACpaperyear{}
 \newcommand*{\IACpapernumber}[1]{\def\iac@papernumber{#1}}\IACpapernumber{}
 \newcommand*{\IACconference}[1]{\def\iac@conference{#1}}\IACconference{}
@@ -117,7 +120,7 @@
 \newcommand*{\IACdate}[1]{\def\iac@date{#1}}\IACdate{}
 
 
-\newcommand{\IACcopyrightA}[1]{\def\iac@copyright{Copyright \copyright\iac@paperyear\ by the International Astronautical Federation. All rights reserved.}}
+\newcommand{\IACcopyrightA}[1]{\def\iac@copyright{Copyright \copyright\iac@paperyear\ by the International Astronautical Federation (IAF). All rights reserved.}}
 \newcommand{\IACcopyrightB}[1]{\def\iac@copyright{Copyright \copyright\iac@paperyear\ by #1. Published by the IAF, with permission and released to the IAF to publish in all forms.}}
 \newcommand{\IACcopyrightC}[1]{\def\iac@copyright{#1}} 
 \newcommand\iac@makecopyright{{\iac@copyright}}
@@ -150,14 +153,15 @@
       {\stepcounter{affnum}%
         \textsuperscript{\@alph{\value{affnum}}} 
         \normalsize\textit{\csuse{iac@affiliation\theaffnum}}\par%
-        \vskip 1.5ex%
+        \vskip 0.25ex%
       }
+    \vskip 1.25ex%
     \setcounter{authnum}{0}
     \whileboolexpr
       { test {\ifnumcomp{\value{authnum}}{<}{\theauthcount}} }%
       {\stepcounter{authnum}%
 		\ifnumcomp{\csuse{iac@iscorrespondingauthor\theauthnum}}{=}{1}{
-      * Corresponding author
+      * Corresponding Author
       \setcounter{authnum}{99}}{}\par% % exit the loop by invalidating the bool condition
 		%\vskip 1.5ex%
 	  }
@@ -166,7 +170,9 @@
       \textbf{Abstract}
   \end{center}
   \indent\iac@abstract\par%
-  \vskip 4.5ex%
+  \vskip 0.75ex%
+  \noindent\textbf{Keywords:} \iac@keywords\par%
+  \vskip 3.0ex%
   
   }%
 
@@ -178,7 +184,7 @@
 \chead{\footnotesize \iac@conference, {\iac@location}, {\iac@date}.\\ \iac@makecopyright}
 
 % Footer
-\setlength{\footskip}{40pt}
+\setlength{\footskip}{1.25cm}
 \rfoot{Page \thepage\ of \pageref{LastPage}}
 \lfoot{\iac@papernumber}
 
