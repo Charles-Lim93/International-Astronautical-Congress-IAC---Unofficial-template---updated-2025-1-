@@ -36,7 +36,7 @@
 \IACdate{5--9 Oct 2026}
 \IACcopyrightA{}
 
-\title{Development and Verification of a Multisensor Navigation System Using an Error State Kalman Filter for Lunar Rovers}
+\title{Development and Verification of a Multisensor Navigation System Using an Error-State Kalman Filter for Lunar Rovers}
 
 % Author and affiliation information from the KSAS 2025 Fall Conference paper.
 \IACauthor{Chulsoo Lim}{1}{0}
@@ -63,16 +63,16 @@
 \IACauthoraffiliation{Hyundai Motor Company, Seoul 06797, Republic of Korea.}
 \IACauthoraffiliation{Electronics and Telecommunications Research Institute, Daejeon 34129, Republic of Korea.}
 
-\abstract{This study proposes a local navigation architecture based on an error state Kalman filter (ESKF). The architecture integrates a fine Sun sensor (FSS), an inertial navigation system (INS), and wheel odometry for four independently steered wheels to support lunar surface operations when visual navigation is degraded or unavailable. The navigation state is propagated in a local Cartesian frame aligned with the initial direction of travel. Constant gravity and a locally planar surface are assumed for operation over short ranges and at low speeds. The proposed algorithm is verified progressively using a Microsoft AirSim/Unreal Engine simulation environment and hardware experiments with a full-scale rover. A gravity compensation device based on helium buoyancy reduces the effective normal load between the wheels and terrain during the ground tests to approximately one sixth of its terrestrial value. In the reported hardware runs, the maximum absolute horizontal position errors were 0.36~m in the $x$ direction and 0.12~m in the $y$ direction, and the maximum absolute heading error was 0.57$^\circ$. The results demonstrate the feasibility of the real-time multisensor navigation framework and its recovery procedure for wheel contact disturbances.}
+\abstract{This study proposes a local navigation architecture based on an error-state Kalman filter (ESKF). The architecture integrates a fine Sun sensor (FSS), an inertial navigation system (INS), and wheel odometry for four independently steered wheels to support lunar surface operations when visual navigation is degraded or unavailable. The navigation state is propagated in a local Cartesian frame aligned with the initial direction of travel. Constant gravity and a locally planar surface are assumed for operation over short ranges and at low speeds. The proposed algorithm is verified progressively using a Microsoft AirSim/Unreal Engine simulation environment and hardware experiments with a full-scale rover. A gravity compensation device based on helium buoyancy reduces the effective normal load between the wheels and terrain during the ground tests to approximately one sixth of its terrestrial value. In the reported hardware runs, the maximum absolute horizontal position errors were 0.36~m in the $x$ direction and 0.12~m in the $y$ direction, and the maximum absolute heading error was 0.57$^\circ$. The results demonstrate the feasibility of the real-time multisensor navigation framework and its recovery procedure for wheel contact disturbances.}
 
-\IACkeywords{lunar rover navigation; error state Kalman filter; fine Sun sensor; inertial navigation; wheel odometry; multisensor fusion.}
+\IACkeywords{lunar rover navigation; error-state Kalman filter; fine Sun sensor; inertial navigation; wheel odometry; multisensor fusion.}
 
 \maketitle
 \thispagestyle{fancy}
 
 \section*{Nomenclature and Abbreviations}
 \begin{tabular}{@{}ll@{}}
-ESKF & error state Kalman filter \\
+ESKF & error-state Kalman filter \\
 FSS & fine Sun sensor \\
 INS & inertial navigation system \\
 IMU & inertial measurement unit \\
@@ -377,7 +377,7 @@ It is compared with the longitudinal projection of the nominal velocity in the b
 
 During a zero turn, all wheels are tangent to a common rotation centre at the body centre. Longitudinal speed is zero while yaw rate is nonzero, so the bicycle model radius becomes singular. The four-wheel model handles the condition directly with $v_{\mathrm{avg}}=0$ and $\omega_{bz}=(v_{RR}-v_{RL})/(2d)\neq0$. During wheelbase adjustment, temporarily nonparallel front and rear steering commands vary the effective kinematic wheelbase. Because the individual steering angles remain explicit, the observation in Eq.~\eqref{eq:15} remains defined throughout both maneuvers.
 
-\section{Error State Kalman Filter Formulation}
+\section{Error-State Kalman Filter Formulation}
 
 The ESKF is the fusion engine of the proposed system. The nominal state is propagated by nonlinear INS mechanization, while the filter estimates the small error between the nominal and true trajectories. Estimated errors from FSS and wheel odometry updates are injected into the nominal state. A right-multiplicative attitude error convention is used consistently~\cite{lefferts1982kalman,sola2017quaternion,sveinsson2012insgps}.
 
