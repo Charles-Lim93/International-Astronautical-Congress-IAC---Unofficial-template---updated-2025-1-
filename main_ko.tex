@@ -382,7 +382,7 @@ d_k
 \end{aligned}
 \end{equation}
 
-식~\eqref{eq:10}의 벡터부는 작은 자세오차에서 회전벡터와 일치하므로 ESKF의 3성분 자세오차 관측잔차로 직접 사용할 수 있다. 자세오차 추정값은 right-multiplicative 보정 쿼터니언으로 변환되어 공칭 INS 쿼터니언에 주입된다. 다만 한 시각의 단일 태양방향은 태양벡터 자체를 축으로 하는 회전을 관측할 수 없으므로, 유효 자세관측 부분공간은 $P_{\perp,k}=I-\hat{\mathbf S}_k^b(\hat{\mathbf S}_k^b)^\top$로 표현되는 rank-2 공간이다. 따라서 태양방향 축의 공분산은 크게 설정하고, 나머지 자세 자유도는 IMU 전파와 중력기준 경사정보로 제한한다. 또한 $d_k\simeq-1$인 반대방향 특이조건과 큰 혁신값은 validity gate에서 제외한다.
+식~\eqref{eq:10}의 벡터부는 작은 자세오차에서 회전벡터와 일치하므로 ESKF의 3성분 자세오차 관측잔차로 직접 사용할 수 있다. 자세오차 추정값은 우측 곱셈 방식의 보정 쿼터니언으로 변환되어 공칭 INS 쿼터니언에 주입된다. 다만 한 시각의 단일 태양방향은 태양벡터 자체를 축으로 하는 회전을 관측할 수 없으므로, 유효 자세관측 부분공간은 $P_{\perp,k}=I-\hat{\mathbf S}_k^b(\hat{\mathbf S}_k^b)^\top$로 표현되는 계수 2 부분공간이다. 따라서 태양방향 축의 공분산은 크게 설정하고, 나머지 자세 자유도는 IMU 전파와 중력기준 경사정보로 제한한다. 또한 $d_k\simeq-1$인 반대방향 특이조건과 큰 혁신값은 유효성 판정에서 제외한다.
 
 \section{4륜 독립조향 Ackermann 오도메트리}
 
@@ -448,7 +448,7 @@ y_k^{\mathrm{od}} \;=\; \begin{bmatrix} v_{\mathrm{avg}} \\ \omega_{bz} \end{bma
 
 \section{오차상태 칼만필터 정식화}
 
-오차상태 칼만필터(error state Kalman filter, ESKF)는 제안 항법시스템의 융합엔진이다. 공칭상태는 비선형 INS 기계화로 전파하고, 필터는 공칭궤적과 실제궤적 사이의 작은 오차만을 추정한다. FSS 및 휠 오도메트리 측정으로 추정한 오차는 공칭상태에 주입하며, 주입 직후 오차상태 평균과 공분산의 기준점을 갱신한다. 본 절에서는 자세오차를 공칭 쿼터니언의 오른쪽에 곱하는 right-multiplicative convention을 일관되게 사용한다~\cite{lefferts1982kalman,sola2017quaternion,sveinsson2012insgps}.
+오차상태 칼만필터(error state Kalman filter, ESKF)는 제안 항법시스템의 융합엔진이다. 공칭상태는 비선형 INS 기계화로 전파하고, 필터는 공칭궤적과 실제궤적 사이의 작은 오차만을 추정한다. FSS 및 휠 오도메트리 측정으로 추정한 오차는 공칭상태에 주입하며, 주입 직후 오차상태 평균과 공분산의 기준점을 갱신한다. 본 절에서는 자세오차를 공칭 쿼터니언의 오른쪽에 곱하는 우측 곱셈 자세오차 정의를 일관되게 사용한다~\cite{lefferts1982kalman,sola2017quaternion,sveinsson2012insgps}.
 
 \subsection{상태분해}
 
@@ -514,7 +514,7 @@ b_{g,k+1}&=b_{g,k}.
 
 \subsection{오차상태 기구학}
 
-right-multiplicative 자세오차를 기준으로 공칭궤적 주위에서 1차 선형화한다. 국부 평면과 일정 중력 가정에 따라 달 자전, 이동각속도 및 중력구배 항은 오차상태 모델에 포함하지 않는다.
+우측 곱셈 자세오차를 기준으로 공칭궤적 주위에서 1차 선형화한다. 국부 평면과 일정 중력 가정에 따라 달 자전, 이동각속도 및 중력구배 항은 오차상태 모델에 포함하지 않는다.
 
 \begin{equation}
 \tag{21}\label{eq:21}
@@ -590,7 +590,7 @@ FSS와 휠 오도메트리 측정은 각각의 비선형 측정함수 $h_j(\hat{
 \begin{aligned}r_k&=z_k-h_j(\hat x_k^-),\\H_k&=\left.\frac{\partial h_j(\hat x_k^-\oplus\delta x)}{\partial\delta x}\right|_{\delta x=0}.\end{aligned}
 \end{equation}
 
-FSS 업데이트에는 식~\eqref{eq:10}의 쿼터니언 벡터부로 구성한 자세잔차 $\mathbf r_k^{ss}$를 사용한다. 관측 Jacobian의 자세 블록에는 $P_{\perp,k}$를 적용하여 관측 불가능한 태양방향 축이 필터를 과도하게 보정하지 않도록 한다. 전체 공칭상태에 대한 Jacobian $H_x$를 사용하는 경우에는 $H_k=H_xX_\delta$로 계산하며, right-multiplicative 쿼터니언 오차에 대한 mapping은 다음과 같다.
+FSS 업데이트에는 식~\eqref{eq:10}의 쿼터니언 벡터부로 구성한 자세잔차 $\mathbf r_k^{ss}$를 사용한다. 관측 Jacobian의 자세 블록에는 $P_{\perp,k}$를 적용하여 관측 불가능한 태양방향 축이 필터를 과도하게 보정하지 않도록 한다. 전체 공칭상태에 대한 Jacobian $H_x$를 사용하는 경우에는 $H_k=H_xX_\delta$로 계산하며, 우측 곱셈 쿼터니언 오차에 대한 사상은 다음과 같다.
 
 \begin{equation}
 \tag{26}\label{eq:26}
@@ -620,7 +620,7 @@ Joseph form은 유한정밀도 계산에서 공분산의 대칭성과 양의 준
 
 \subsection{오차주입 및 초기화}
 
-측정 업데이트 이후 추정된 오차를 공칭상태에 주입한다. 자세는 6.1절에서 정의한 right-multiplicative convention에 따라 공칭 쿼터니언의 오른쪽에 곱한다. 주입 후에는 reset Jacobian으로 공분산의 선형화 기준점을 이동하고 오차상태 평균을 0으로 초기화한다.
+측정 업데이트 이후 추정된 오차를 공칭상태에 주입한다. 자세는 6.1절에서 정의한 우측 곱셈 방식에 따라 공칭 쿼터니언의 오른쪽에 곱한다. 주입 후에는 reset Jacobian으로 공분산의 선형화 기준점을 이동하고 오차상태 평균을 0으로 초기화한다.
 
 \begin{equation}
 \tag{29a}\label{eq:29a}
