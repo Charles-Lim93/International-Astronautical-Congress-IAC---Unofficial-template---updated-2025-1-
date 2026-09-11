@@ -81,7 +81,7 @@ VO & visual odometry \\
 
 \section{Introduction}
 
-International and commercial interest in lunar exploration has intensified through programs such as Artemis and Commercial Lunar Payload Services. As a result, surface mobility has become a central topic in planetary robotics. Lunar rovers are being developed for cargo transport, scientific exploration, and in situ resource utilization. Reliable positioning and precise navigation are essential if these systems are to operate autonomously with limited support from Earth.
+International and commercial interest in lunar exploration has intensified through programs such as Artemis and Commercial Lunar Payload Services (CLPS). As a result, surface mobility has become a central topic in planetary robotics. Lunar rovers are being developed for cargo transport, scientific exploration, and in situ resource utilization. Reliable positioning and precise navigation are essential if these systems are to operate autonomously with limited support from Earth.
 
 Unlike terrestrial autonomous vehicles, lunar rovers cannot use GNSS, high-accuracy terrestrial beacons, or a useful planetary magnetic field~\cite{ilyas2016integrated}. State estimation is therefore restricted to a small set of self-contained measurements, including inertial data, celestial observations, and wheel odometry. Their error characteristics must be modeled carefully and fused consistently.
 
@@ -556,7 +556,7 @@ The lunar rover environment is implemented using Microsoft AirSim and Unreal Eng
 
 The simulation uses the lunar gravity model and takes the rover pose reported by Unreal Engine as ground truth. INS propagation driven by the IMU, the FSS measurement update, and the wheel odometry update operate at 200~Hz, 5~Hz, and 20~Hz, respectively. Four manoeuvre types are exercised: straight driving, turning, slope traversal, and a composite route, with wheel slip intervals included in the route. The simulated IMU and FSS noise and bias are constructed from the sensor class specifications in Table~\ref{tab:sensors}. The initial covariance $P_0$, process noise covariance $Q$, and measurement noise covariance $R$ are diagonal matrices derived from the sensor specifications. After software simulation, the same sensor input and update paths are executed on the physical NAVCOM through PILS/HILS to verify coordinate transformations, execution cadence, and data flow in real time.
 
-\begin{figure}[t]
+\begin{figure}[!t]
 \centering
 \begin{subfigure}[t]{0.98\linewidth}
   \centering
@@ -568,6 +568,12 @@ The simulation uses the lunar gravity model and takes the rover pose reported by
   \centering
   \includegraphics[width=\linewidth]{pics/sim_moon_car_crop.png}
   \caption{Rover driving simulation}
+\end{subfigure}
+\par\medskip
+\begin{subfigure}[t]{0.98\linewidth}
+  \centering
+  \includegraphics[width=\linewidth]{pics/sim_moon_car2.png}
+  \caption{Rover driving and simulated sensor views}
 \end{subfigure}
 \caption{Unreal Engine/AirSim lunar terrain and rover driving simulation environment.}
 \label{fig:lunar_simulation_environment}

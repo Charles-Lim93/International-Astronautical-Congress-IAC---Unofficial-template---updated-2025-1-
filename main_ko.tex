@@ -658,7 +658,7 @@ Microsoft AirSim과 Unreal Engine을 이용하여 달 표면 로버 주행환경
 
 시뮬레이션에서는 월면 중력모델을 적용하고 Unreal Engine의 로버 pose를 기준값으로 사용하였다. IMU 기반 INS 전파, FSS 측정 업데이트 및 휠 오도메트리 업데이트의 주기는 각각 200~Hz, 5~Hz 및 20~Hz로 설정하였다. 직진, 회전, 경사로 및 복합경로의 네 가지 주행형태를 수행하였으며, 경로에는 휠 슬립이 발생하는 구간을 포함하였다. IMU 및 FSS의 시뮬레이션 잡음과 바이어스는 Table~\ref{tab:sensors}의 센서 등급 사양을 기준으로 구성하였다. 초기 공분산 $P_0$, 프로세스잡음 공분산 $Q$ 및 측정잡음 공분산 $R$은 센서 사양에 근거한 대각행렬로 구성하였다. 소프트웨어 시뮬레이션 후 동일한 센서 입력과 업데이트 경로를 PILS/HILS의 실제 NAVCOM에서 실행하여 좌표변환, 실행주기 및 실시간 데이터 흐름의 일관성을 확인하였다.
 
-\begin{figure}[t]
+\begin{figure}[!t]
 \centering
 \begin{subfigure}[t]{0.98\linewidth}
   \centering
@@ -670,6 +670,12 @@ Microsoft AirSim과 Unreal Engine을 이용하여 달 표면 로버 주행환경
   \centering
   \includegraphics[width=\linewidth]{pics/sim_moon_car_crop.png}
   \caption{Rover driving simulation}
+\end{subfigure}
+\par\medskip
+\begin{subfigure}[t]{0.98\linewidth}
+  \centering
+  \includegraphics[width=\linewidth]{pics/sim_moon_car2.png}
+  \caption{Rover driving and simulated sensor views}
 \end{subfigure}
 \caption{Unreal Engine/AirSim 기반 월면 지형 및 로버 주행 시뮬레이션 환경.}
 \label{fig:lunar_simulation_environment}
