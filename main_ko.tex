@@ -201,7 +201,7 @@ p^\ell=\begin{bmatrix}x&y&z\end{bmatrix}^{\top},\qquad v^\ell=\begin{bmatrix}v_x
 
 \subsection{센서 구성}
 
-Table~\ref{tab:sensors}은 시험 플랫폼에 사용된 주요 센서 파라미터를 요약한다. IMU와 모터 엔코더는 로버의 임베디드 항법컴퓨터에 통합되어 있다. 3개의 FSS는 상호보완적인 광축 방향으로 로버 상부 데크에 장착하여 전체 하늘 관측범위를 넓히고 다양한 로버 자세에서 유효한 태양 시선을 확보한다. 각 갱신 시 추정기는 유효한 FSS 채널을 선택하고 해당 센서의 보정된 차체좌표계 장착행렬을 적용한다. 4장에서는 센서 인덱스를 생략하며, $C_{\mathrm{ss}}^b$는 선택된 FSS의 장착행렬을 의미한다.
+Table~\ref{tab:sensors}은 시험 플랫폼에 사용된 주요 센서 파라미터를 요약한다. IMU와 모터 엔코더는 로버의 임베디드 항법컴퓨터에 통합되어 있으며, 로버에는 3개의 FSS가 장착되어 있다. 표기를 간결하게 하기 위해 4장에서는 일반적인 하나의 FSS 채널에 대한 측정모델을 제시하고 센서 인덱스를 생략한다. 개별 채널을 구분할 때 FSS $j$의 보정된 장착행렬은 $C_{\mathrm{ss},j}^b$로 나타낼 수 있다.
 
 \begin{table}[t]
 \centering
@@ -712,18 +712,16 @@ FSS 시뮬레이션에서는 로버의 위치와 시각에 따른 기준 태양�
 
 \subsection{하드웨어 구성}
 
-제안 알고리즘의 실시간 구현과 실제 로버 적용 가능성을 평가하기 위하여 실물 크기 4륜 독립조향 로버를 이용한다. 로버에는 Jetson Orin Nano와 STM32F7 기반 NAVCOM, IMU, 4개의 휠 엔코더, 조향각 측정장치 및 3개의 FSS를 탑재하며, 전체 하드웨어 구성은 Fig.~\ref{fig:hw_architecture}에 나타내었다. 세 FSS는 태양 가시성을 높이도록 상호보완적인 관측방향으로 배치하며, 현재 조명조건에서 유효한 채널을 선택한다. 실내 하드웨어 시험에서는 실제 태양조건을 재현할 수 없어 FSS 채널을 활성화하지 않았다.
+제안 알고리즘의 실시간 구현과 실제 로버 적용 가능성을 평가하기 위하여 실물 크기 4륜 독립조향 로버를 이용한다. 로버에는 Jetson Orin Nano와 STM32F7 기반 NAVCOM, IMU, 4개의 휠 엔코더, 조향각 측정장치 및 3개의 FSS를 탑재하며, 전체 하드웨어 구성은 Fig.~\ref{fig:hw_architecture}에 나타내었다. 실내 하드웨어 시험에서는 실제 태양조건을 재현할 수 없어 FSS 채널을 활성화하지 않았다.
 
 STM32F7은 엔코더, 조향장치 및 저수준 구동계 데이터를 수집하고, Jetson Orin Nano는 센서 시간동기, 4륜 오도메트리 계산과 ESKF 항법을 실시간으로 수행한다.
 
 \begin{figure*}[!t]
 \centering
-\input{pics/hw_architecture.tex}
-\caption{상호보완적인 관측방향의 FSS 3개를 포함한 실물 로버의 센서 입력 및 NAVCOM 기반 항법처리 구성.}
+\includegraphics[width=\textwidth]{pics/hw_architecture.png}
+\caption{실물 로버 하드웨어 시험에 사용한 센서 입력 및 NAVCOM 기반 항법처리 구성.}
 \label{fig:hw_architecture}
 \end{figure*}
-
-\FloatBarrier
 
 \subsection{시험환경}
 \label{sec:hardware_test_environment}
@@ -763,25 +761,23 @@ Fig.~\ref{fig:filter_reinitialization}은 구덩이 및 휠과 지면 사이의 
 
 대표 주행시험의 추가 시간이력을 Fig.~\ref{fig:hardware_drive_velocity}와 Fig.~\ref{fig:hardware_drive_position}에 제시하였다. 종방향 및 횡방향 속도 그래프는 보정값, 입력값, INS 값 및 필터링 값을 비교하며, 종방향 그래프에는 오도메트리에 사용한 후륜 회전속도도 함께 나타내었다. 평면궤적은 동일한 유형의 하드웨어 주행에서 누적한 위치를 보여준다. 시험 로거의 그래프에는 North와 East 표기가 남아 있으나, 본 국부시험에서는 각각 Sec.~2.2에서 정의한 초기 정렬축 $x_\ell$과 $y_\ell$에 해당하며 전역 월면 NED 좌표를 의미하지 않는다.
 
-\begin{figure}[t]
+\begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{pics/drive_result.jpg}
 \caption{대표 하드웨어 주행시험에서 얻은 종방향 및 횡방향 속도 시간이력. 종방향 그래프에는 후륜 회전속도 신호를 함께 나타내었다.}
 \label{fig:hardware_drive_velocity}
 \end{figure}
 
-\begin{figure}[t]
+\begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{pics/result2.png}
 \caption{대표 하드웨어 주행시험의 평면 위치궤적. 로거의 North 및 East 표기는 본 연구의 국부 초기 정렬축 $x_\ell$과 $y_\ell$에 해당한다.}
 \label{fig:hardware_drive_position}
 \end{figure}
 
-\FloatBarrier
-
 레이저 거리측정값을 기준으로 한 위치추정 결과와 수동으로 계측한 방향각 결과를 각각 Table~\ref{tab:position_results}과 Table~\ref{tab:heading_results}에 정리하였다. MD 및 AD 주행시험에서 추정 위치는 실측값과 전반적으로 일치하였으며, 제로턴 및 주행 후 방향각 시험에서도 추정값이 기준값을 추종하였다.
 
-\begin{table}[H]
+\begin{table}[!t]
 \centering
 \caption{Position estimation results from the indoor rover experiments. All values are in metres.}
 \label{tab:position_results}
@@ -800,7 +796,7 @@ AD\#1 &  3.05 & -1.16 &  3.30 & -1.28 \\
 \end{tabularx}
 \end{table}
 
-\begin{table}[H]
+\begin{table}[!t]
 \centering
 \caption{Heading estimation results from the indoor rover experiments. Heading values are in degrees.}
 \label{tab:heading_results}
