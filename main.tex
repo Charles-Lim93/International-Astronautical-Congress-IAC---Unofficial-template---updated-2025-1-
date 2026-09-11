@@ -163,7 +163,7 @@ The following right-handed orthonormal frames are used.
 \begin{itemize}[leftmargin=*]
 \item \textbf{Body frame $b$:} rover-fixed frame with its origin at the IMU. The $x_b$-axis points forward, $y_b$ to the right, and $z_b$ downward.
 \item \textbf{Local navigation frame $\ell$:} local Cartesian frame fixed at the test starting point. The $x_\ell$-axis is aligned with the initial forward direction, $y_\ell$ points initially rightward, and $z_\ell$ points downward. Initially, $C_b^\ell(0)=I$.
-\item \textbf{Sun sensor frame $ss$:} frame fixed to the FSS housing, with $x_{ss}$ along the optical axis. The fixed mounting alignment from the sensor frame to the body frame is $C_{ss}^b$.
+\item \textbf{Sun sensor frame $\mathrm{ss}$:} frame fixed to the FSS housing, with $x_{\mathrm{ss}}$ along the optical axis. The fixed mounting alignment from the sensor frame to the body frame is $C_{\mathrm{ss}}^b$.
 \end{itemize}
 
 A rotation between frames is represented by a direction cosine matrix $C_a^b$ or quaternion $q_a^b$. The matrix transforms a vector expressed in frame $a$ into frame $b$:
@@ -178,7 +178,7 @@ The navigation state is relative to the starting point rather than global lunar 
 
 \subsection{Sensor Configuration}
 
-Table~\ref{tab:sensors} summarizes the main sensor parameters. The IMU and motor encoders are integrated with the onboard navigation computer. The FSS is mounted on the upper deck with its optical axis aligned nominally with $+x_b$ to maximize sky visibility. Its mounting error is included in $C_{ss}^b$.
+Table~\ref{tab:sensors} summarizes the main sensor parameters. The IMU and motor encoders are integrated with the onboard navigation computer. The FSS is mounted on the upper deck with its optical axis aligned nominally with $+x_b$ to maximize sky visibility. Its mounting error is included in $C_{\mathrm{ss}}^b$.
 
 \begin{table}[t]
 \centering
@@ -202,7 +202,7 @@ Encoders & Drive/steering channels & Four each \\
 
 \section{Local Frame INS Mechanization}
 
-The strapdown INS integrates IMU angular rate and specific force to propagate rover attitude, velocity, and position in the local frame $\ell$~\cite{titterton2004strapdown,groves2013principles}. The experiments are limited to short-range, low-speed motion. The lunar surface over the test area is approximated as a local plane with constant gravity. Lunar rotation, surface curvature, position-dependent gravity, and transport rate are neglected. This approximation is justified when $L/R_M\ll1$ and the Coriolis acceleration $2\omega_Mv$ is much smaller than the IMU error level.
+The strapdown INS integrates IMU angular rate and specific force to propagate rover attitude, velocity, and position in the local frame $\ell$~\cite{titterton2004strapdown,groves2013principles}. The experiments are limited to short-range, low-speed motion. The lunar surface over the test area is approximated as a local plane with constant gravity. Lunar rotation, surface curvature, position-dependent gravity, and transport rate are neglected. This approximation is justified when $D/R_M\ll1$ and $\lVert 2\omega_M^\ell\times v^\ell\rVert$ is much smaller than the IMU error level, where $D$ is the maximum traverse distance, $R_M$ is the mean lunar radius, and $\omega_M^\ell$ is the lunar rotation vector expressed in the local frame, with $\lVert\omega_M^\ell\rVert\approx2.6617\times10^{-6}$~rad/s.
 
 \subsection{Constant Gravity and Local Plane Assumptions}
 
@@ -272,31 +272,31 @@ The FSS is particularly suitable as an INS aid because its measurement does not 
 
 \subsection{Reference Sun Vector from Ephemeris Data}
 
-Let $\bar{\mathbf{S}}_{MS}^i(t)$ be the unit vector from the Moon centre to the Sun in the MCI frame obtained from the onboard ephemeris. Because the INS state does not include global LLH position, a fixed landing site transformation from MCMF to the local frame $C_m^\ell$ is used:
+Let $\bar S_{MS}^i(t)$ be the unit vector from the Moon centre to the Sun in the MCI frame obtained from the onboard ephemeris. Because the INS state does not include global LLH position, a fixed landing site transformation from MCMF to the local frame $C_m^\ell$ is used:
 \begin{equation}
 \tag{7}\label{eq:7}
-\mathbf{S}^{\ell}(t)=C_m^\ell C_i^m(t)\,\bar{\mathbf{S}}_{MS}^i(t).
+S^{\ell}(t)=C_m^\ell C_i^m(t)\,\bar S_{MS}^i(t).
 \end{equation}
 Here, $C_i^m(t)$ is the rotation from MCI to MCMF as a function of time. Solar parallax due to rover motion over short distances is negligible. The predicted vector in the sensor frame is
 \begin{equation}
 \tag{8}\label{eq:8}
-\hat{\mathbf{S}}^b(t)=C_\ell^b(\hat q)\mathbf{S}^{\ell}(t),\qquad \hat{\mathbf{S}}^{ss}(t)=C_b^{ss}\hat{\mathbf{S}}^b(t).
+\hat S^b(t)=C_\ell^b(q)S^{\ell}(t),\qquad \hat S^{\mathrm{ss}}(t)=C_b^{\mathrm{ss}}\hat S^b(t).
 \end{equation}
 Equations~\eqref{eq:7} and~\eqref{eq:8} define the predicted vectors in the sensor and body frames that are compared with the measured three-axis Sun vector. Figure~\ref{fig:ephemeris_variation} shows the reference vector variation over month, time of day, and rover heading.
 
 \subsection{Three-Axis Sun Vector Measurement}
 
-The FSS outputs a normalized three-component Sun line-of-sight vector $\mathbf S_k^{ss}=[S_x^{ss},S_y^{ss},S_z^{ss}]^\top$ in the sensor frame. It is transformed to the body frame using the fixed mounting matrix $C_{ss}^b$ and normalized again:
+The FSS outputs a normalized three-component Sun line-of-sight vector $S_k^{\mathrm{ss}}=[S_x^{\mathrm{ss}},S_y^{\mathrm{ss}},S_z^{\mathrm{ss}}]^\top$ in the sensor frame. It is transformed to the body frame using the fixed mounting matrix $C_{\mathrm{ss}}^b$ and normalized again:
 \begin{equation}
 \tag{9}\label{eq:9}
 \begin{aligned}
-\mathbf y_k^{\mathrm{LOS}}&=\mathbf S_k^{ss}+\mathbf e_{ss,k},\\
-\mathbf S_{m,k}^{b}&=
-\frac{C_{ss}^{b}\mathbf y_k^{\mathrm{LOS}}}
-{\left\lVert C_{ss}^{b}\mathbf y_k^{\mathrm{LOS}}\right\rVert}.
+y_k^{\mathrm{LOS}}&=S_k^{\mathrm{ss}}+e_{\mathrm{FSS},k},\\
+S_{m,k}^{b}&=
+\frac{C_{\mathrm{ss}}^{b}y_k^{\mathrm{LOS}}}
+{\left\lVert C_{\mathrm{ss}}^{b}y_k^{\mathrm{LOS}}\right\rVert}.
 \end{aligned}
 \end{equation}
-The noise $\mathbf e_{ss,k}$ is modeled as zero-mean Gaussian noise whose three-axis covariance is propagated from the FSS angular accuracy specification. Measurements outside the field of view, failed spot centroid solutions, and vectors outside the unit norm tolerance are rejected before the attitude update.
+The noise $e_{\mathrm{FSS},k}$ is modeled as zero-mean Gaussian noise whose three-axis covariance is propagated from the FSS angular accuracy specification. Measurements outside the field of view, failed spot centroid solutions, and vectors outside the unit norm tolerance are rejected before the attitude update.
 
 \begin{figure*}[!t]
 \centering
@@ -307,24 +307,24 @@ The noise $\mathbf e_{ss,k}$ is modeled as zero-mean Gaussian noise whose three-
 
 \subsection{Sun Vector Quaternion Attitude Correction}
 
-The attitude update uses the minimum-rotation quaternion that aligns the predicted Sun vector $\hat{\mathbf S}_k^b$ in the body frame from Eq.~\eqref{eq:8} with the measured vector $\mathbf S_{m,k}^b$ from Eq.~\eqref{eq:9}. Defining their cross and dot products as $\mathbf c_k$ and $d_k$, respectively, gives
+The attitude update uses the minimum-rotation quaternion that aligns the predicted Sun vector $\hat S_k^b$ in the body frame from Eq.~\eqref{eq:8} with the measured vector $S_{m,k}^b$ from Eq.~\eqref{eq:9}. Defining their cross and dot products as $c_k$ and $d_k$, respectively, gives
 \begin{equation}
 \tag{10}\label{eq:10}
 \begin{aligned}
-\mathbf c_k
-  &=\hat{\mathbf S}_k^b\times\mathbf S_{m,k}^b,\\
+c_k
+  &=\hat S_k^b\times S_{m,k}^b,\\
 d_k
-  &=(\hat{\mathbf S}_k^b)^\top\mathbf S_{m,k}^b,\\
-\delta q_{ss,k}
+  &=(\hat S_k^b)^\top S_{m,k}^b,\\
+\delta q_{\mathrm{FSS},k}
   &=\frac{1}{\sqrt{2(1+d_k)}}
-    \begin{bmatrix}1+d_k\\ \mathbf c_k\end{bmatrix},\\
-  &=\begin{bmatrix}\delta q_{w,k}\\ \delta\mathbf q_{v,k}\end{bmatrix},\\
-\mathbf r_k^{ss}
-  &=2\,\operatorname{sign}(\delta q_{w,k})\,
-    \delta\mathbf q_{v,k}.
+    \begin{bmatrix}1+d_k\\ c_k\end{bmatrix},\\
+  &=\begin{bmatrix}\delta q_{w,k}\\ \delta q_{v,k}\end{bmatrix},\\
+r_{\mathrm{FSS},k}
+  &=2\,\operatorname{sgn}(\delta q_{w,k})\,
+    \delta q_{v,k}.
 \end{aligned}
 \end{equation}
-For small attitude errors, the vector part of Eq.~\eqref{eq:10} is equivalent to a rotation vector and is therefore used directly as the three-component ESKF attitude residual. The estimated attitude error is converted to a right-multiplicative correction quaternion and injected into the nominal INS quaternion. A single instantaneous Sun direction cannot observe rotation about the Sun vector itself; the valid attitude observation subspace is therefore the rank-two projector $P_{\perp,k}=I-\hat{\mathbf S}_k^b(\hat{\mathbf S}_k^b)^\top$. The covariance along the Sun vector axis is inflated, while the remaining degree of freedom is constrained by IMU propagation and inclination referenced to gravity. Antiparallel geometry with $d_k\simeq-1$ and excessive innovations are excluded by the validity gate.
+For small attitude errors, the vector part of Eq.~\eqref{eq:10} is equivalent to a rotation vector and is therefore used directly as the three-component ESKF attitude residual. The estimated attitude error is converted to a right-multiplicative correction quaternion and injected into the nominal INS quaternion. A single instantaneous Sun direction cannot observe rotation about the Sun vector itself; the valid attitude observation subspace is therefore the rank-two projector $P_{\perp,k}=I-\hat S_k^b(\hat S_k^b)^\top$. The covariance along the Sun vector axis is inflated, while the remaining degree of freedom is constrained by IMU propagation and inclination referenced to gravity. Antiparallel geometry with $d_k\simeq-1$ and excessive innovations are excluded by the validity gate.
 
 \section{Ackermann Odometry for Four Independently Steered Wheels}
 
@@ -332,10 +332,10 @@ The second aiding channel is wheel odometry from the drive and steering encoders
 
 \subsection{Kinematics of Four Independently Steered Wheels}
 
-As shown in Fig.~\ref{fig:odometry_geometry}, the rover has wheelbase $L$, half-track $d$, and independently steered wheels at the four corners. For instantaneous turning radius $R$, the rear steering angles satisfying the Ackermann condition are
+As shown in Fig.~\ref{fig:odometry_geometry}, the rover has wheelbase $L$, half-track $d$, and independently steered wheels at the four corners. For instantaneous turning radius $\rho$, the rear steering angles satisfying the Ackermann condition are
 \begin{equation}
 \tag{11}\label{eq:11}
-\delta_{LB}=-\arctan\!\left(\dfrac{L}{R-d}\right),\qquad \delta_{RB}=-\arctan\!\left(\dfrac{L}{R+d}\right).
+\delta_{LB}=-\arctan\!\left(\dfrac{L}{\rho-d}\right),\qquad \delta_{RB}=-\arctan\!\left(\dfrac{L}{\rho+d}\right).
 \end{equation}
 The front axle uses the corresponding equations with opposite sign. The effective rover steering angle is
 \begin{equation}
@@ -363,7 +363,7 @@ The longitudinal speed, yaw rate, and instantaneous radius are
 \begin{aligned}
 v_{\mathrm{avg}}&=\tfrac12\bigl(v_{RL}+v_{RR}\bigr),\\
 \omega_{bz}&=\dfrac{v_{RR}-v_{RL}}{2d},\\
-R&=\dfrac{v_{\mathrm{avg}}}{\omega_{bz}}.
+\rho&=\dfrac{v_{\mathrm{avg}}}{\omega_{bz}}.
 \end{aligned}
 \end{equation}
 The odometry pseudo-measurement is
@@ -385,13 +385,14 @@ The ESKF is the fusion engine of the proposed system. The nominal state is propa
 
 The 16-dimensional nominal state consists of position, velocity, unit quaternion attitude, accelerometer bias, and gyro bias:
 \begin{equation*}
-\hat{x}=\bigl[(p^\ell)^{\top},(v^\ell)^{\top},(q_b^\ell)^{\top},b_a^{\top},b_g^{\top}\bigr]^{\top}\in\mathbb{R}^{16}.
+x=\bigl[(p^\ell)^{\top},(v^\ell)^{\top},(q_b^\ell)^{\top},b_a^{\top},b_g^{\top}\bigr]^{\top}\in\mathbb{R}^{16}.
 \end{equation*}
 The true state $x_t$ is decomposed with the generalized addition operator $\oplus$:
 \begin{equation}
 \tag{16}\label{eq:16}
-x_t=\hat{x}\oplus\delta x,\qquad \delta x\rightarrow0\quad\text{after each injection and reset.}
+x_t=x\oplus\delta x.
 \end{equation}
+The error state is reset to zero after each injection into the nominal state.
 The component relations are
 \begin{equation}
 \tag{17}\label{eq:17}
@@ -422,8 +423,8 @@ v_{k+1}^\ell&=v_k^\ell+a_k^\ell\Delta t,\\
   &=\operatorname{Exp}_q\!\left(
     \hat\omega_{\ell b,k}^b\Delta t\right),\\
 q_{b,k+1}^\ell
-  &=\operatorname{norm}\!\left(
-    q_{b,k}^\ell\otimes\Delta q_k\right),\\
+  &=\frac{q_{b,k}^\ell\otimes\Delta q_k}
+  {\left\lVert q_{b,k}^\ell\otimes\Delta q_k\right\rVert},\\
 b_{a,k+1}&=b_{a,k},\\
 b_{g,k+1}&=b_{g,k}.
 \end{aligned}
@@ -455,6 +456,7 @@ The continuous and discrete error dynamics are
 \tag{22}\label{eq:22}
 \begin{aligned}\delta\dot x&=F_c\delta x+G_cw,\\\delta x_{k+1}&=\Phi_k\delta x_k+w_{d,k},\\\Phi_k&=\exp(F_c\Delta t).\end{aligned}
 \end{equation}
+Here, $w=[n_a^\top,n_g^\top,n_{wa}^\top,n_{wg}^\top]^\top$ is the continuous-time noise vector, and $\Phi(\tau)=\exp(F_c\tau)$ is the state transition matrix over an interval $\tau$.
 For the local Cartesian model over short ranges,
 \begin{equation}
 \tag{23a}\label{eq:23a}
@@ -493,12 +495,12 @@ For small $\Delta t$, $\Phi_k\simeq I+F_c\Delta t$. No additional $\Delta t$ is 
 
 \subsection{Measurement Update}
 
-FSS and wheel odometry measurements are processed asynchronously through nonlinear functions $h_j(\hat x)$:
+FSS and wheel odometry measurements are processed asynchronously through nonlinear functions $h_j(x)$:
 \begin{equation}
 \tag{25}\label{eq:25}
-\begin{aligned}r_k&=z_k-h_j(\hat x_k^-),\\H_k&=\left.\frac{\partial h_j(\hat x_k^-\oplus\delta x)}{\partial\delta x}\right|_{\delta x=0}.\end{aligned}
+\begin{aligned}r_k&=z_k-h_j(x_k^-),\\H_k&=\left.\frac{\partial h_j(x_k^-\oplus\delta x)}{\partial\delta x}\right|_{\delta x=0}.\end{aligned}
 \end{equation}
-The FSS update uses the attitude residual $\mathbf r_k^{ss}$ formed from the vector part of the correction quaternion in Eq.~\eqref{eq:10}. The attitude block of the measurement Jacobian includes $P_{\perp,k}$ to prevent excessive correction about the unobservable Sun axis. For a Jacobian $H_x$ with respect to the full nominal state, $H_k=H_xX_\delta$, where
+The FSS update uses the attitude residual $r_{\mathrm{FSS},k}$ formed from the vector part of the correction quaternion in Eq.~\eqref{eq:10}. With the right-multiplicative error convention and the cross product order in Eq.~\eqref{eq:10}, the attitude block of the measurement Jacobian is $H_{\mathrm{FSS},\theta}=-P_{\perp,k}$. This projection prevents correction about the unobservable Sun axis. For a Jacobian $H_x$ with respect to the full nominal state, $H_k=H_xX_\delta$, where
 \begin{equation}
 \tag{26}\label{eq:26}
 \begin{aligned}X_\delta&=\operatorname{blkdiag}(I_6,Q_{\delta\theta},I_6),\\Q_{\delta\theta}&=\frac12\begin{bmatrix}-q_v^\top\\q_wI+[q_v]_\times\end{bmatrix},\\q&=[q_w,\ q_v^\top]^\top.\end{aligned}
@@ -529,8 +531,8 @@ After each measurement update, the estimated error is injected into the nominal 
 p^\ell&\leftarrow p^\ell+\delta\hat p^\ell,
 &v^\ell&\leftarrow v^\ell+\delta\hat v^\ell,\\
 q_b^\ell&\leftarrow
-  \operatorname{norm}\!\left(q_b^\ell\otimes
-  \delta q(\delta\hat\theta)\right),\\
+  \frac{q_b^\ell\otimes\delta q(\delta\hat\theta)}
+  {\left\lVert q_b^\ell\otimes\delta q(\delta\hat\theta)\right\rVert},\\
 b_a&\leftarrow b_a+\delta\hat b_a,
 &b_g&\leftarrow b_g+\delta\hat b_g.
 \end{aligned}
