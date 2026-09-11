@@ -606,6 +606,12 @@ The estimated roll, pitch, and yaw generally follow the reference attitude varia
 \label{fig:simulation_navigation_results}
 \end{figure}
 
+\section{Hardware Tests}
+
+\subsection{Hardware Configuration}
+
+A full-scale rover with four independently steered wheels is used to evaluate real-time implementation and practical applicability. The rover carries a Jetson Orin Nano/STM32F7 NAVCOM, an IMU, four wheel encoders, and steering angle sensors, as shown in Fig.~\ref{fig:hw_architecture}. The STM32F7 collects encoder, steering, and low-level drivetrain data; the Jetson performs time synchronization, four-wheel odometry, and real-time ESKF navigation.
+
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=\textwidth]{pics/hw_architecture.png}
@@ -613,11 +619,23 @@ The estimated roll, pitch, and yaw generally follow the reference attitude varia
 \label{fig:hw_architecture}
 \end{figure*}
 
-\section{Hardware Tests}
+\FloatBarrier
 
-A full-scale rover with four independently steered wheels is used to evaluate real-time implementation and practical applicability. The rover carries a Jetson Orin Nano/STM32F7 NAVCOM, an IMU, four wheel encoders, and steering angle sensors, as shown in Fig.~\ref{fig:hw_architecture}. The STM32F7 collects encoder, steering, and low-level drivetrain data; the Jetson performs time synchronization, four-wheel odometry, and real-time ESKF navigation.
+\subsection{Test Environment}
+\label{sec:hardware_test_environment}
+
+Two complementary ground-test environments were constructed. First, an artificial lunar regolith bed containing prepared pits and uneven regions was used to examine wheel sinkage, traction loss, and slip-induced odometry disturbances. Figure~\ref{fig:regolith_pit} shows representative pits and disturbed surface regions introduced along the driving path. Second, a lunar analogue terrain constructed from Isopink rigid foam panels was used to reproduce larger-scale lunar surface geometry, including slopes and local relief. Rover driving experiments were conducted in both environments to exercise the navigation system under wheel slip and terrain-induced contact disturbances.
 
 To emulate reduced lunar gravity during ground tests, the rover was connected to a gravity compensation device based on helium buoyancy. The device supported approximately $5/6$ of the rover weight upward, reducing the effective normal load at the contacts between the wheels and terrain to about $1/6$ of its terrestrial value. This arrangement enabled hardware evaluation of wheel sinkage and slip under a normal load condition representative of lunar gravity. The rover inertia remained unchanged; therefore, the apparatus reproduced loading determined by gravity rather than the complete six-degree-of-freedom lunar dynamics.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{pics/pit.png}
+\caption{Artificial lunar regolith test surface with prepared pits and disturbed regions used to induce wheel slip and contact disturbances.}
+\label{fig:regolith_pit}
+\end{figure}
+
+\FloatBarrier
 
 \subsection{Abnormal State Detection and Filter Reinitialization}
 \label{sec:recovery_reinitialization}
@@ -638,6 +656,24 @@ Figure~\ref{fig:filter_reinitialization} shows the interval in which pit and whe
 \caption{Detection and filter reinitialization when pit and wheel contact disturbances drive the velocity estimate outside its normal range. Insets show the estimate before and after recovery.}
 \label{fig:filter_reinitialization}
 \end{figure}
+
+Additional time histories from a representative driving run are shown in Figs.~\ref{fig:hardware_drive_velocity} and~\ref{fig:hardware_drive_position}. The longitudinal and lateral plots compare the corrected, provided, INS, and filtered velocity channels; the longitudinal panel also includes the rear-wheel speed signals used by the odometry channel. The planar trajectory shows the position accumulated over the same type of hardware drive. The test logger retains the labels North and East, which correspond in these local experiments to the initially aligned $x_\ell$ and $y_\ell$ axes defined in Sec.~2.2 rather than to a globally referenced lunar NED frame.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.96\textwidth]{pics/drive_result.jpg}
+\caption{Longitudinal and lateral velocity histories from a representative hardware driving experiment. Rear-wheel speed signals are also shown in the longitudinal panel.}
+\label{fig:hardware_drive_velocity}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.88\textwidth]{pics/result2.png}
+\caption{Planar position trajectory from a representative hardware driving experiment. The logger's North and East labels correspond to the locally initialized $x_\ell$ and $y_\ell$ axes used in this study.}
+\label{fig:hardware_drive_position}
+\end{figure*}
+
+\FloatBarrier
 
 Position estimates are compared with laser range measurements, and heading estimates are compared with manually surveyed values in Tables~\ref{tab:position_results} and~\ref{tab:heading_results}. The results show general agreement for MD and AD drives and for zero turn and heading tests after driving.
 
@@ -685,7 +721,7 @@ This study developed a local navigation system based on an ESKF that integrates 
 
 The Unreal Engine/AirSim study compared only two configurations, INS only and INS + wheel odometry + FSS, using the same reference trajectory and initial conditions. The integrated solution generally followed the reference roll, pitch, and yaw variations and the horizontal velocity and position histories. The FSS quaternion update limited the accumulation of inertial attitude error over time, while wheel odometry constrained planar speed and maintained continuity of position estimation over short ranges. Transient vertical velocity and position errors appeared during abrupt terrain height changes, after which the estimates returned toward the reference trajectory.
 
-The navigation algorithm was implemented in real time on the Jetson Orin Nano/STM32F7 NAVCOM. During the full-scale rover trials, a gravity compensation device based on helium buoyancy reduced the effective normal load to approximately one sixth of its terrestrial value while the rover traversed artificial lunar regolith. The tests demonstrated detection and rejection of wheel odometry updates contaminated by pits and impacts between the wheels and terrain, followed by recovery to stable tracking after filter reinitialization. For the runs reported in the tables, the maximum absolute horizontal position errors were 0.36~m in $x$ and 0.12~m in $y$, and the maximum absolute heading error during zero turn tests and tests conducted after driving was 0.57$^\circ$. These results support the practical operation of the four-wheel odometry model, real-time ESKF implementation, and recovery procedure for abnormal states on the rover platform.
+The navigation algorithm was implemented in real time on the Jetson Orin Nano/STM32F7 NAVCOM. During the full-scale rover trials, a gravity compensation device based on helium buoyancy reduced the effective normal load to approximately one sixth of its terrestrial value. The rover was driven on an artificial lunar regolith bed containing pits and on a lunar analogue terrain constructed from Isopink panels. The tests demonstrated detection and rejection of wheel odometry updates contaminated by pits and impacts between the wheels and terrain, followed by recovery to stable tracking after filter reinitialization. For the runs reported in the tables, the maximum absolute horizontal position errors were 0.36~m in $x$ and 0.12~m in $y$, and the maximum absolute heading error during zero turn tests and tests conducted after driving was 0.57$^\circ$. These results support the practical operation of the four-wheel odometry model, real-time ESKF implementation, and recovery procedure for abnormal states on the rover platform.
 
 The indoor hardware campaign could not reproduce the parallel illumination and incidence angle conditions of the Sun, and the FSS update was therefore not activated in the physical rover tests. Consequently, the complete architecture with FSS aiding was evaluated in simulation and HILS, whereas the physical experiments verified the wheel and inertial subsystem and real-time NAVCOM implementation. Future work should conduct integrated FSS/INS tests using a calibrated solar simulator producing parallel light or direct sunlight, repeat the evaluation over a wider range of Sun elevations and slip conditions with Monte Carlo uncertainty analysis, and extend the model to include lunar curvature, lunar rotation, and gravity variation with position for traverses over long ranges. With this additional validation, the proposed architecture can provide a nonvisual aiding channel that improves navigation continuity and fault tolerance when visual navigation is unavailable or degraded on the lunar surface.
 
