@@ -11,7 +11,7 @@
 }
 \resizebox{0.98\textwidth}{!}{%
 \begin{tikzpicture}[node distance=12mm and 14mm]
-  \node[sensor] (fss) {Fine Sun Sensor\\(FSS $\times$ 1)};
+  \node[sensor] (fss) {Fine Sun Sensors\\(FSS $\times$ 3, complementary boresights)};
   \node[sensor, below=9mm of fss] (imu) {IMU\\angular rate, specific force};
 
   \node[interface, right=20mm of fss] (enc) {Wheel encoders ($\times$ 4)\\front left, front right,\\rear left, rear right};
@@ -25,7 +25,7 @@
   \node[controller, right=17mm of jetson] (rcu) {\textbf{RCU}\\rover control\\and telemetry};
   \node[controller, right=12mm of rcu] (act) {Drive and\\steering\\actuators};
 
-  \draw[flow] (fss.east) -- ++(8mm,0) |- node[signal, near end] {Sun vector} (jetson.north);
+  \draw[flow] (fss.east) -- ++(8mm,0) |- node[signal, near end] {selected Sun vector} (jetson.north);
   \draw[flow] (imu.east) -- ++(8mm,0) |- node[signal, near end] {IMU data} (jetson.south);
   \draw[flow] (enc.east) -- ++(6mm,0) |- node[signal, near end] {encoder counts} (stm.north);
   \draw[flow] (steer.east) -- ++(6mm,0) |- node[signal, near end] {steering angles} (stm.south);

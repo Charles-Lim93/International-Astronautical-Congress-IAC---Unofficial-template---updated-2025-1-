@@ -178,7 +178,7 @@ The navigation state is relative to the starting point rather than global lunar 
 
 \subsection{Sensor Configuration}
 
-Table~\ref{tab:sensors} summarizes the main sensor parameters. The IMU and motor encoders are integrated with the onboard navigation computer. A single FSS is mounted on the upper deck to maximize sky visibility, and its calibrated alignment with the body frame is represented by $C_{\mathrm{ss}}^b$.
+Table~\ref{tab:sensors} summarizes the main sensor parameters. The IMU and motor encoders are integrated with the onboard navigation computer. Three FSS units are mounted on the upper deck with complementary boresight directions to increase aggregate sky coverage and retain a valid Sun line of sight over a wider range of rover attitudes. At each update, the estimator selects a valid FSS channel and applies its calibrated body-frame mounting matrix. The sensor index is omitted in Sec.~4, where $C_{\mathrm{ss}}^b$ denotes the mounting matrix of the selected FSS.
 
 \begin{table}[t]
 \centering
@@ -193,6 +193,7 @@ IMU & Sampling rate & 200 Hz \\
  & Gyro bias & 10 deg/h class \\
  & Accelerometer bias & 1 mg class \\
 FSS & Accuracy & 0.2 deg ($2\sigma$) \\
+ & Number of units & Three \\
  & Field of view & 176 deg \\
  & Mass and power & 15 g, 100--174 mW \\
 Encoders & Drive/steering channels & Four each \\
@@ -609,12 +610,12 @@ The estimated roll, pitch, and yaw generally follow the reference attitude varia
 
 \subsection{Hardware Configuration}
 
-A full-scale rover with four independently steered wheels is used to evaluate real-time implementation and practical applicability. The rover carries a Jetson Orin Nano/STM32F7 NAVCOM, an IMU, four wheel encoders, steering angle sensors, and a single FSS interface, as shown in Fig.~\ref{fig:hw_architecture}. The STM32F7 collects encoder, steering, and low-level drivetrain data; the Jetson performs time synchronization, four-wheel odometry, and real-time ESKF navigation. The FSS channel was not activated in the indoor hardware tests because representative solar illumination could not be reproduced.
+A full-scale rover with four independently steered wheels is used to evaluate real-time implementation and practical applicability. The rover carries a Jetson Orin Nano/STM32F7 NAVCOM, an IMU, four wheel encoders, steering angle sensors, and three FSS units, as shown in Fig.~\ref{fig:hw_architecture}. The three FSS units use complementary viewing directions to improve Sun visibility, and a valid channel is selected according to the current illumination geometry. The STM32F7 collects encoder, steering, and low-level drivetrain data; the Jetson performs time synchronization, four-wheel odometry, and real-time ESKF navigation. The FSS channels were not activated in the indoor hardware tests because representative solar illumination could not be reproduced.
 
 \begin{figure*}[!t]
 \centering
 \input{pics/hw_architecture.tex}
-\caption{Navigation hardware (NAVCOM) architecture of the full-scale rover.}
+\caption{Navigation hardware (NAVCOM) architecture of the full-scale rover, including three FSS channels with complementary viewing directions.}
 \label{fig:hw_architecture}
 \end{figure*}
 
