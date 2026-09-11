@@ -626,14 +626,14 @@ A full-scale rover with four independently steered wheels is used to evaluate re
 
 Two complementary ground-test environments were constructed. First, an artificial lunar regolith bed containing prepared pits and uneven regions was used to examine wheel sinkage, traction loss, and slip-induced odometry disturbances. Figure~\ref{fig:regolith_pit} shows representative pits and disturbed surface regions introduced along the driving path. Second, a lunar analogue terrain constructed from Isopink rigid foam panels was used to reproduce larger-scale lunar surface geometry, including slopes and local relief. Rover driving experiments were conducted in both environments to exercise the navigation system under wheel slip and terrain-induced contact disturbances.
 
-To emulate reduced lunar gravity during ground tests, the rover was connected to a gravity compensation device based on helium buoyancy. The device supported approximately $5/6$ of the rover weight upward, reducing the effective normal load at the contacts between the wheels and terrain to about $1/6$ of its terrestrial value. This arrangement enabled hardware evaluation of wheel sinkage and slip under a normal load condition representative of lunar gravity. The rover inertia remained unchanged; therefore, the apparatus reproduced loading determined by gravity rather than the complete six-degree-of-freedom lunar dynamics.
-
-\begin{figure}[t]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{pics/pit.png}
 \caption{Artificial lunar regolith test surface with prepared pits and disturbed regions used to induce wheel slip and contact disturbances.}
 \label{fig:regolith_pit}
 \end{figure}
+
+To emulate reduced lunar gravity during ground tests, the rover was connected to a gravity compensation device based on helium buoyancy. The device supported approximately $5/6$ of the rover weight upward, reducing the effective normal load at the contacts between the wheels and terrain to about $1/6$ of its terrestrial value. This arrangement enabled hardware evaluation of wheel sinkage and slip under a normal load condition representative of lunar gravity. The rover inertia remained unchanged; therefore, the apparatus reproduced loading determined by gravity rather than the complete six-degree-of-freedom lunar dynamics.
 
 \FloatBarrier
 
@@ -642,20 +642,22 @@ To emulate reduced lunar gravity during ground tests, the rover was connected to
 
 During runs on the artificial lunar regolith, pits, obstacles, and transient impacts between the wheels and terrain can abruptly change wheel contact and drive the velocity observations derived from encoder data and the filter tracking states outside their normal operating ranges. The hardware implementation therefore includes a supervisory layer that continuously monitors the wheel odometry velocity and the corresponding filter states. When a predefined threshold is exceeded, the interval is classified as abnormal and the contaminated wheel odometry update is temporarily rejected. The mean of the error state is returned to zero, while the covariance and internal filter information are restored to their initial operating conditions. Wheel odometry updates resume after the measurements and estimated states return to the normal range.
 
-This filter reinitialization is a procedure for responding to faults during hardware tests and is distinct from the routine error injection and zero reset performed after each measurement update in Eqs.~\eqref{eq:29a} and~\eqref{eq:29b}. Its purpose is to prevent a gross disturbance from propagating into subsequent position and attitude estimates; the classification of failure modes, effects, and mitigation actions at the system level follows FMECA practice~\cite{borgovini1993fmeca}.
-
-\subsection{Hardware Experimental Results}
-
-The filter reinitialization procedure described in Sec.~\ref{sec:recovery_reinitialization} was activated during the hardware runs. The experiment verified that velocity disturbances generated while traversing pits and obstacles were detected as abnormal, the contaminated wheel odometry updates were rejected, and the filter returned to stable tracking after reinitialization.
-
 Figure~\ref{fig:filter_reinitialization} shows the interval in which pit and wheel contact disturbances drive the estimated speed outside the normal range and the subsequent return to stable tracking after reinitialization. The complete time history and the enlarged interval are shown together to compare the estimated velocity before and after recovery.
 
-\begin{figure}[t]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{pics/filter_reinit.png}
 \caption{Detection and filter reinitialization when pit and wheel contact disturbances drive the velocity estimate outside its normal range. Insets show the estimate before and after recovery.}
 \label{fig:filter_reinitialization}
 \end{figure}
+
+This filter reinitialization is a procedure for responding to faults during hardware tests and is distinct from the routine error injection and zero reset performed after each measurement update in Eqs.~\eqref{eq:29a} and~\eqref{eq:29b}. Its purpose is to prevent a gross disturbance from propagating into subsequent position and attitude estimates; the classification of failure modes, effects, and mitigation actions at the system level follows FMECA practice~\cite{borgovini1993fmeca}.
+
+\FloatBarrier
+
+\subsection{Hardware Experimental Results}
+
+The filter reinitialization procedure described in Sec.~\ref{sec:recovery_reinitialization} was activated during the hardware runs. The experiment verified that velocity disturbances generated while traversing pits and obstacles were detected as abnormal, the contaminated wheel odometry updates were rejected, and the filter returned to stable tracking after reinitialization.
 
 Additional time histories from a representative driving run are shown in Figs.~\ref{fig:hardware_drive_velocity} and~\ref{fig:hardware_drive_position}. The longitudinal and lateral plots compare the corrected, provided, INS, and filtered velocity channels; the longitudinal panel also includes the rear-wheel speed signals used by the odometry channel. The planar trajectory shows the position accumulated over the same type of hardware drive. The test logger retains the labels North and East, which correspond in these local experiments to the initially aligned $x_\ell$ and $y_\ell$ axes defined in Sec.~2.2 rather than to a globally referenced lunar NED frame.
 
