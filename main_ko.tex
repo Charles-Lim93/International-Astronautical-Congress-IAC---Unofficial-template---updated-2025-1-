@@ -97,7 +97,7 @@ Artemis와 Commercial Lunar Payload Services를 비롯한 프로그램을 통해
 
 INS는 외부 인프라 없이 고대역폭 자세, 속도 및 위치 추정값을 제공하므로 달 로버 항법 아키텍처의 핵심 요소이다. 그러나 INS를 단독으로 운용하면 바이어스와 잡음의 적분으로 인해 항법오차가 발산하며, 이러한 현상은 저가 MEMS 센서에서 특히 두드러진다. 따라서 적어도 하나의 절대적이고 비발산하는 측정값으로 주기적으로 보정해야 한다~\cite{titterton2004strapdown,groves2013principles}.
 
-기존 화성 및 달 로버는 여러 보조센서를 이용해 이러한 한계를 해결하였다. Mars Exploration Rovers, Mars Science Laboratory 및 Perseverance는 시각 오도메트리(visual odometry, VO)와 스테레오 기반 지형상대항법에 크게 의존한다. Chang'e/Yutu 로버는 관성측정값을 태양 관측 및 영상기반 방법과 결합한다. 이러한 임무는 행성표면 이동체에서 영상기반 항법기술이 성숙했음을 보여준다.
+기존 화성 및 달 로버는 여러 보조센서를 이용해 이러한 한계를 해결하였다. Mars Exploration Rovers, Mars Science Laboratory 및 Perseverance는 시각 오도메트리(visual odometry, VO)와 스테레오 기반 지형상대항법에 크게 의존한다~\cite{maimone2007mer,rankin2021curiosity,maki2020mars2020}. Chang'e/Yutu 로버는 관성측정, 휠 오도메트리 및 영상기반 측위를 결합한다~\cite{ma2020yutu2}. 이러한 임무는 행성표면 이동체에서 영상기반 항법기술이 성숙했음을 보여준다.
 
 VO의 성능과 가용성은 장면의 텍스처와 조명에 따라 달라진다. 저텍스처 표토, 낮은 태양고도에서의 긴 그림자, 높은 명암비, 일시적인 카메라 성능 저하 및 제한된 탑재 연산자원은 특징점 검출과 정합의 신뢰도를 낮출 수 있다. 따라서 지형영상과 독립적인 항법 보조채널은 시스템의 가용성과 고장 허용성을 높이는 보완수단으로서 가치가 있다.
 
@@ -111,15 +111,15 @@ VO의 성능과 가용성은 장면의 텍스처와 조명에 따라 달라진�
 \toprule
 \textbf{Mission} & \textbf{Operation} & \textbf{Main Navigation Sensors} & \textbf{Navigation Approach} \\
 \midrule
-Apollo LRV & Crew operated & Directional gyro, wheel odometers, Sun shadow device & Dead reckoning with solar heading check \\
-MER Spirit / Opportunity & Ground commands + AutoNav & Stereo cameras, IMU, wheel encoders & VO, terrain mapping, and slip compensation \\
-MSL Curiosity & Ground commands + AutoNav & Stereo cameras, IMU, wheel encoders & VO and terrain hazard assessment \\
-Mars 2020 Perseverance & Enhanced AutoNav & Stereo cameras, IMU, wheel encoders & Continuous VO, mapping, and path planning \\
-Chang'e-4 / Yutu-2 & Ground in the loop & Stereo cameras, IMU, wheel odometry & Stereo mapping and rover localization \\
-Chandrayaan-3 / Pragyan & Partly autonomous & Stereo Navcams, mobility telemetry & DEM generated on the ground and path planning \\
-SLIM / LEV-2 & Fully autonomous, short range & Dual cameras, motion sensors & Autonomous mobility and imaging \\
-IM-2 / YAOKI* & Teleoperated & Camera, mobility telemetry & Imaging only; no surface traverse \\
-Rashid-1 / Rashid-2** & Ground in the loop & Cameras with a wide field of view, mobility sensors & Surface operation assisted by vision \\
+Apollo LRV~\cite{smith1973lrv} & Crew operated & Directional gyro, wheel odometers, Sun shadow device & Dead reckoning with solar heading check \\
+MER Spirit / Opportunity~\cite{maimone2007mer} & Ground commands + AutoNav & Stereo cameras, IMU, wheel encoders & VO, terrain mapping, and slip compensation \\
+MSL Curiosity~\cite{rankin2021curiosity} & Ground commands + AutoNav & Stereo cameras, IMU, wheel encoders & VO and terrain hazard assessment \\
+Mars 2020 Perseverance~\cite{verma2023perseverance} & Enhanced AutoNav & Stereo cameras, IMU, wheel encoders & Continuous VO, mapping, and path planning \\
+Chang'e-4 / Yutu-2~\cite{ma2020yutu2} & Ground in the loop & Stereo cameras, IMU, wheel odometry & Stereo mapping and rover localization \\
+Chandrayaan-3 / Pragyan~\cite{isro2024pragyan} & Semi-autonomous & Stereo Navcams, mobility telemetry & Ground-generated DEM and path planning \\
+SLIM / LEV-2~\cite{jaxa2024lev2} & Fully autonomous, short range & Dual cameras, onboard control & Autonomous mobility and imaging \\
+IM-2 / YAOKI~\cite{dymon2025yaoki} & Teleoperated checkout & Camera, wheel telemetry & Images returned; not deployed or traversed \\
+Rashid-1 / Rashid-2~\cite{ispace2023m1,mbrsc2026rashid} & Not deployed / planned & Navigation cameras, mobility sensors & No Rashid-1 surface operation; Rashid-2 mobility planned \\
 Proposed system & Fallback mode without vision & FSS, IMU, wheel encoders & Local dead reckoning aided by FSS attitude and wheel odometry \\
 \bottomrule
 \end{tabularx}
@@ -201,7 +201,7 @@ p^\ell=\begin{bmatrix}x&y&z\end{bmatrix}^{\top},\qquad v^\ell=\begin{bmatrix}v_x
 
 \subsection{센서 구성}
 
-표 1은 시험 플랫폼에 사용된 주요 센서 파라미터를 요약한다. IMU와 모터 엔코더는 로버의 임베디드 항법컴퓨터에 통합되어 있다. FSS는 전진주행 중 하늘 관측범위를 최대화할 수 있도록 광축을 차체 $+x_b$축 방향과 정렬하여 로버 상부 데크에 장착한다. FSS의 장착오차는 고정 회전행렬 $C_{\mathrm{ss}}^b$에 포함한다.
+Table~\ref{tab:sensors}은 시험 플랫폼에 사용된 주요 센서 파라미터를 요약한다. IMU와 모터 엔코더는 로버의 임베디드 항법컴퓨터에 통합되어 있다. 단일 FSS는 하늘 관측범위를 최대화하도록 로버 상부 데크에 장착하며, 차체좌표계에 대한 보정된 장착정렬은 $C_{\mathrm{ss}}^b$로 표현한다.
 
 \begin{table}[t]
 \centering
@@ -655,7 +655,7 @@ P&\leftarrow G_{\mathrm{reset}}P^+G_{\mathrm{reset}}^\top,
 
 Microsoft AirSim과 Unreal Engine을 이용하여 달 표면 로버 주행환경을 구성한다. 시뮬레이션에는 일정한 월면 중력, 인공 월면 지형, 로버의 4륜 독립조향 기구학과 휠–지면 상호작용 모델을 포함한다. IMU, FSS 및 휠 엔코더의 측정주기, 센서 잡음, 바이어스와 시간동기 조건을 정의하고, 시뮬레이션에서 생성된 센서 데이터를 제안한 ESKF에 입력한다. 구성한 월면 지형과 로버 주행환경은 Fig.~\ref{fig:lunar_simulation_environment}에 나타내었다.
 
-시뮬레이션에서는 월면 중력모델을 적용하고 Unreal Engine의 로버 pose를 기준값으로 사용하였다. IMU 기반 INS 전파, FSS 측정 업데이트 및 휠 오도메트리 업데이트의 주기는 각각 200~Hz, 5~Hz 및 20~Hz로 설정하였다. 직진, 회전, 경사로 및 복합경로의 네 가지 주행형태를 수행하였으며, 경로에는 휠 슬립이 발생하는 구간을 포함하였다. IMU 및 FSS의 시뮬레이션 잡음과 바이어스는 Table~\ref{tab:sensors}의 센서 등급 사양을 기준으로 구성하고 두 항법 구성에 동일한 조건을 적용하였다. 초기 공분산 $P_0$, 프로세스잡음 공분산 $Q$ 및 측정잡음 공분산 $R$은 센서 사양에 근거한 대각행렬로 구성하고 두 항법 구성에 동일하게 적용하였다. 소프트웨어 시뮬레이션 후 동일한 센서 입력과 업데이트 경로를 PILS/HILS의 실제 NAVCOM에서 실행하여 좌표변환, 실행주기 및 실시간 데이터 흐름의 일관성을 확인하였다.
+시뮬레이션에서는 월면 중력모델을 적용하고 Unreal Engine의 로버 pose를 기준값으로 사용하였다. IMU 기반 INS 전파, FSS 측정 업데이트 및 휠 오도메트리 업데이트의 주기는 각각 200~Hz, 5~Hz 및 20~Hz로 설정하였다. 직진, 회전, 경사로 및 복합경로의 네 가지 주행형태를 수행하였으며, 경로에는 휠 슬립이 발생하는 구간을 포함하였다. IMU 및 FSS의 시뮬레이션 잡음과 바이어스는 Table~\ref{tab:sensors}의 센서 등급 사양을 기준으로 구성하였다. 초기 공분산 $P_0$, 프로세스잡음 공분산 $Q$ 및 측정잡음 공분산 $R$은 센서 사양에 근거한 대각행렬로 구성하였다. 소프트웨어 시뮬레이션 후 동일한 센서 입력과 업데이트 경로를 PILS/HILS의 실제 NAVCOM에서 실행하여 좌표변환, 실행주기 및 실시간 데이터 흐름의 일관성을 확인하였다.
 
 \begin{figure}[t]
 \centering
@@ -678,11 +678,9 @@ FSS 시뮬레이션에서는 로버의 위치와 시각에 따른 기준 태양�
 
 \subsection{시뮬레이션 결과}
 
-센서 융합에 따른 항법성능 변화를 확인하기 위하여 (i) INS only와 (ii) INS + wheel odometry + FSS의 두 가지 항법 구성만을 비교하였다.
+본문에 제시한 시뮬레이션은 INS + wheel odometry + FSS 결합 구성의 추종성능을 평가한다. 공칭 INS 상태를 전파하는 동안 휠 오도메트리 속도 관측과 FSS 태양벡터 기반 쿼터니언 자세보정을 비동기적으로 적용하였다. 동일하게 정의한 시나리오를 반복 실행하여 구현의 재현성을 확인하였으며, 본문에는 하나의 대표 시간이력을 제시한다. 앙상블 통계분석은 본 연구범위에 포함하지 않았으므로 Monte Carlo 성능으로 해석하지 않는다.
 
-두 경우에는 동일한 기준궤적, 초기조건 및 로버 주행명령을 적용하였다. INS only 경우는 IMU 적분에 의한 자세, 속도 및 위치오차의 누적을 확인하기 위한 기준선으로 사용하였다. 결합항법 경우에는 동일한 공칭 INS 전파에 휠 오도메트리 속도 관측과 FSS 태양벡터 기반 쿼터니언 자세보정을 비동기적으로 적용하였다. 별도의 INS + wheel odometry 단독 시나리오는 수행하지 않았다. 동일하게 정의한 시나리오를 반복 실행하여 구현의 재현성을 확인하였으며, 본문에는 반복 실행 중 하나의 대표 시간이력을 제시한다. 반복횟수에 기반한 앙상블 통계분석은 본 연구범위에 포함하지 않았으므로 Monte Carlo 성능으로 해석하지 않는다.
-
-결합항법 경우의 자세, 속도 및 위치 추종결과를 Fig.~\ref{fig:simulation_navigation_results}에 나타내었다. 그림 내부의 ``INS Result''는 순수 INS only 시나리오가 아니라, ESKF 보정값이 주입되는 공칭 INS 항법상태를 의미한다. INS only 시나리오는 보조측정이 없는 비교 기준선으로 사용하였다.
+결합항법 구성의 자세, 속도 및 위치 추종결과를 Fig.~\ref{fig:simulation_navigation_results}에 나타내었다. 그림 내부의 ``INS Result''는 ESKF 측정 업데이트와 오차주입이 반영된 공칭 INS 항법상태를 의미한다.
 
 자세결과에서는 roll, pitch 및 yaw 추정값이 기준 자세의 변화와 전반적으로 일치한다. 특히 FSS에서 측정한 3축 태양벡터와 천체력 기준벡터로 구성한 보정 쿼터니언이 ESKF 자세 업데이트에 입력되어 관성 자세오차의 장기 누적을 제한한다. 속도결과에서는 휠 오도메트리 관측이 평면 주행속도를 구속하여 $x$ 및 $y$ 방향 속도 추종성을 유지하며, 수직방향의 급격한 지형변화 구간에서는 일시적인 차이가 나타난 뒤 다시 기준값으로 수렴한다. 위치결과에서도 수평 위치는 기준궤적을 근접하게 추종하고, $z$ 방향은 지형 고도변화와 수직가속도 적분의 영향으로 수평성분보다 상대적으로 큰 과도오차를 보인다.
 
@@ -713,13 +711,13 @@ FSS 시뮬레이션에서는 로버의 위치와 시각에 따른 기준 태양�
 
 \subsection{하드웨어 구성}
 
-제안 알고리즘의 실시간 구현과 실제 로버 적용 가능성을 평가하기 위하여 실물 크기 4륜 독립조향 로버를 이용한다. 로버에는 Jetson Orin Nano와 STM32F7 기반 NAVCOM, IMU, 4개의 휠 엔코더 및 조향각 측정장치를 탑재하며, 전체 하드웨어 구성은 Fig.~\ref{fig:hw_architecture}에 나타내었다.
+제안 알고리즘의 실시간 구현과 실제 로버 적용 가능성을 평가하기 위하여 실물 크기 4륜 독립조향 로버를 이용한다. 로버에는 Jetson Orin Nano와 STM32F7 기반 NAVCOM, IMU, 4개의 휠 엔코더, 조향각 측정장치 및 단일 FSS 인터페이스를 탑재하며, 전체 하드웨어 구성은 Fig.~\ref{fig:hw_architecture}에 나타내었다. 실내 하드웨어 시험에서는 실제 태양조건을 재현할 수 없어 FSS 채널을 활성화하지 않았다.
 
 STM32F7은 엔코더, 조향장치 및 저수준 구동계 데이터를 수집하고, Jetson Orin Nano는 센서 시간동기, 4륜 오도메트리 계산과 ESKF 항법을 실시간으로 수행한다.
 
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=\textwidth]{pics/hw_architecture.png}
+\input{pics/hw_architecture.tex}
 \caption{실물 로버 하드웨어 시험에 사용한 센서 입력 및 NAVCOM 기반 항법처리 구성.}
 \label{fig:hw_architecture}
 \end{figure*}
@@ -731,7 +729,7 @@ STM32F7은 엔코더, 조향장치 및 저수준 구동계 데이터를 수집�
 
 두 종류의 상호보완적인 지상 시험환경을 구축하였다. 첫째, 휠 침하, 구동력 저하 및 슬립에 따른 오도메트리 외란을 확인하기 위해 구덩이와 불균일 구간을 포함한 인공 월면토 시험장을 구성하였다. Fig.~\ref{fig:regolith_pit}은 주행경로에 조성한 대표적인 구덩이와 교란 지면을 나타낸다. 둘째, 경사와 국부 요철 등 비교적 큰 규모의 월면 형상을 재현하기 위해 아이소핑크 경질 발포 패널을 이용한 달 모사 지형을 제작하였다. 두 환경에서 각각 로버 주행시험을 수행하여 휠 슬립과 지형에 따른 접촉외란 조건에서 항법시스템의 동작을 확인하였다.
 
-\begin{figure}[H]
+\begin{figure}[!t]
 \centering
 \includegraphics[width=\linewidth]{pics/pit.png}
 \caption{휠 슬립과 접촉외란을 유발하기 위해 구덩이와 불균일 구간을 조성한 인공 월면토 시험장.}
@@ -739,8 +737,6 @@ STM32F7은 엔코더, 조향장치 및 저수준 구동계 데이터를 수집�
 \end{figure}
 
 또한 지상에서 월면의 저중력 조건을 모사하기 위해 로버에 헬륨 부력식 중력보상장치를 연결하였다. 이 장치는 로버 중량의 약 $5/6$을 상방에서 지지하여 휠과 지면의 접촉부에 작용하는 유효 수직하중을 지구 중력 조건의 약 $1/6$로 감소시킨다. 이를 통해 인공 월면토 주행에서 저중력 정상하중이 휠 침하와 슬립에 미치는 영향을 하드웨어 수준에서 평가하였다. 다만 로버의 관성질량은 변하지 않으므로, 본 장치는 월면의 전체 6자유도 동역학이 아니라 중력에 따른 정상하중을 모사한다.
-
-\FloatBarrier
 
 \subsection{이상상태 감지 및 복구 재초기화}
 \label{sec:recovery_reinitialization}
@@ -826,7 +822,7 @@ Atti \#3 &  -2.00 &  -1.80 & After move \\
 
 본 연구에서는 GNSS를 사용할 수 없고 영상기반 항법의 가용성이 조명과 지형조건에 따라 저하될 수 있는 월면 로버를 대상으로, INS, 정밀 태양센서(FSS) 및 4륜 독립조향 휠 오도메트리를 결합한 ESKF 기반 국부항법시스템을 제안하였다. 제안 시스템은 단거리·저속 주행에 적합한 국부 Cartesian 좌표계와 일정 중력 가정에서 공칭 INS 상태를 고속으로 전파하고, 비동기 보조측정을 이용하여 누적오차를 보정한다. FSS의 3축 태양 시선벡터는 탑재 천체력으로 계산한 기준 태양벡터와 정렬되어 최소회전 보정 쿼터니언을 구성하며, 이 쿼터니언의 최소좌표 잔차를 ESKF 자세 관측값으로 사용한다. 휠 오도메트리는 4륜 독립조향 형상을 직접 반영하여 일반 Ackermann 주행뿐 아니라 제로턴과 휠베이스 조정 중에도 속도와 요각속도 관측값을 제공한다.
 
-Unreal Engine/AirSim 시뮬레이션에서는 INS only와 INS + wheel odometry + FSS의 두 구성을 동일한 기준궤적과 초기조건에서 비교하였다. 결합항법 결과는 roll, pitch 및 yaw 자세변화와 수평 속도·위치 기준값을 전반적으로 추종하였으며, FSS 쿼터니언 업데이트가 관성 자세오차의 장기 누적을 제한하고 휠 오도메트리가 평면 주행속도와 단거리 위치추정의 연속성을 보조함을 확인하였다. 급격한 지형 고도변화 구간에서는 수직 속도와 위치에 과도오차가 나타났으나 이후 기준궤적으로 다시 수렴하였다.
+Unreal Engine/AirSim 시뮬레이션에서는 INS + wheel odometry + FSS 결합 구성의 추종성능을 시뮬레이터 기준궤적과 비교하여 평가하였다. 결합항법 결과는 roll, pitch 및 yaw 자세변화와 수평 속도·위치 기준값을 전반적으로 추종하였으며, FSS 쿼터니언 업데이트가 관성 자세오차의 장기 누적을 제한하고 휠 오도메트리가 평면 주행속도와 단거리 위치추정의 연속성을 보조함을 확인하였다. 급격한 지형 고도변화 구간에서는 수직 속도와 위치에 과도오차가 나타났으나 이후 기준궤적으로 다시 수렴하였다.
 
 제안 알고리즘은 Jetson Orin Nano와 STM32F7로 구성된 NAVCOM에 실시간 구현하였다. 실물 크기 4륜 독립조향 로버를 이용한 하드웨어 시험에서는 헬륨 부력식 중력보상장치로 유효 수직하중을 지구 중력 조건의 약 $1/6$로 낮추었다. 로버는 구덩이를 포함한 인공 월면토 시험장과 아이소핑크 패널로 제작한 달 모사 지형에서 주행하였다. 이 시험에서 구덩이 및 휠과 지면 사이의 충격에 의해 오염된 휠 오도메트리 업데이트를 감지·차단하고 필터를 재초기화한 뒤 정상 추종상태로 복귀하는 것을 확인하였다. 표에 제시된 시험에서 수평 위치의 최대 절대오차는 $x$ 방향 0.36~m, $y$ 방향 0.12~m였으며, 제로턴과 주행 후 방향각의 최대 절대오차는 0.57$^\circ$였다. 이 결과는 제안한 4륜 오도메트리, 실시간 ESKF 구현 및 이상상태 복구절차가 실제 로버 플랫폼에서 유효하게 동작함을 보여준다.
 
