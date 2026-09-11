@@ -549,6 +549,8 @@ The corrected nominal state becomes the next linearization point. The quaternion
 
 \section{Simulation}
 
+\subsection{Simulation Overview}
+
 The lunar rover environment is implemented using Microsoft AirSim and Unreal Engine. It includes constant lunar gravity, synthetic terrain, the kinematics of four independently steered wheels, and interaction between the wheels and terrain. IMU, FSS, and encoder sampling, noise, bias, and time synchronization are defined, and the simulated sensor data are supplied to the ESKF. Figure~\ref{fig:lunar_simulation_environment} shows the terrain and rover driving environment.
 
 The simulation uses the lunar gravity model and takes the rover pose reported by Unreal Engine as ground truth. The IMU-driven INS propagation, FSS measurement update, and wheel odometry update operate at 200~Hz, 5~Hz, and 20~Hz, respectively. Four manoeuvre types are exercised: straight driving, turning, slope traversal, and a composite route, with wheel slip intervals included in the route. The simulated IMU and FSS noise and bias are constructed from the sensor class specifications in Table~\ref{tab:sensors}, and identical conditions are applied to both navigation configurations. The initial covariance $P_0$, process noise covariance $Q$, and measurement noise covariance $R$ are diagonal matrices derived from the sensor specifications and are applied identically to both navigation configurations. After software simulation, the same sensor input and update paths are executed on the physical NAVCOM through PILS/HILS to verify coordinate transformations, execution cadence, and real-time data flow.
@@ -613,9 +615,18 @@ The estimated roll, pitch, and yaw generally follow the reference attitude varia
 
 \section{Hardware Tests}
 
+\subsection{Navigation Architecture}
+
+
 A full-scale rover with four independently steered wheels is used to evaluate real-time implementation and practical applicability. The rover carries a Jetson Orin Nano/STM32F7 NAVCOM, an IMU, four wheel encoders, and steering angle sensors, as shown in Fig.~\ref{fig:hw_architecture}. The STM32F7 collects encoder, steering, and low-level drivetrain data; the Jetson performs time synchronization, four-wheel odometry, and real-time ESKF navigation.
 
 To emulate reduced lunar gravity during ground tests, the rover was connected to a gravity compensation device based on helium buoyancy. The device supported approximately $5/6$ of the rover weight upward, reducing the effective normal load at the contacts between the wheels and terrain to about $1/6$ of its terrestrial value. This arrangement enabled hardware evaluation of wheel sinkage and slip under a normal load condition representative of lunar gravity. The rover inertia remained unchanged; therefore, the apparatus reproduced loading determined by gravity rather than the complete six-degree-of-freedom lunar dynamics.
+
+\subsection{Test Environment}
+
+
+
+
 
 \subsection{Abnormal State Detection and Filter Reinitialization}
 \label{sec:recovery_reinitialization}
@@ -637,7 +648,7 @@ Figure~\ref{fig:filter_reinitialization} shows the interval in which pit and whe
 \label{fig:filter_reinitialization}
 \end{figure}
 
-Position estimates are compared with laser range measurements, and heading estimates are compared with manually surveyed values in Tables~\ref{tab:position_results} and~\ref{tab:heading_results}. The results show general agreement for MD and AD drives and for zero turn and heading tests after driving.
+Position estimates are compared with laser range measurements, and heading estimates are compared with manually surveyed values in Tables~\ref{tab:position_results} and~\ref{tab:heading_results}. The results show general agreement for manual driving (MD) and autonomous driving (AD) drives and for zero turn and heading tests after driving.
 
 \begin{table}[H]
 \centering
@@ -654,6 +665,7 @@ MD\#1 & 12.92 &  0.10 & 13.02 &  0.10 \\
 MD\#2 &  3.09 & -0.86 &  3.04 & -0.83 \\
 MD\#3 &  5.07 &  0.50 &  5.43 &  0.53 \\
 AD\#1 &  3.05 & -1.16 &  3.30 & -1.28 \\
+AD|#2 & 15.02 &  0.12 & 10.07 & 0.72 \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -669,9 +681,10 @@ AD\#1 &  3.05 & -1.16 &  3.30 & -1.28 \\
 \toprule
 \textbf{Case} & \shortstack{\textbf{True}\\\textbf{heading}} & \shortstack{\textbf{Estimated}\\\textbf{heading}} & \textbf{Maneuver} \\
 \midrule
-Atti \#1 &  25.00 &  25.57 & Zero turn \\
-Atti \#2 &  35.00 &  35.00 & Zero turn \\
-Atti \#3 &  -2.00 &  -1.80 & After move \\
+Test \#1 &  25.00 &  25.57 & Zero turn \\
+Test \#2 &  35.00 &  35.00 & Zero turn \\
+Test \#3 &  -2.00 &  -1.80 & After drive \\
+Test \#4 &  16.20 & 16.14 &  After drive \\
 \bottomrule
 \end{tabularx}
 \end{table}
